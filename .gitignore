@@ -1,0 +1,127 @@
+# ----------------------------------------------------
+# 1. 编译/环境/Python Artifacts
+# ----------------------------------------------------
+# Python 编译字节码文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 虚拟环境文件夹 (你的 replication_env_311)
+replication_env_311/
+.venv/
+env/
+
+# IDE/编辑器生成的文件 (如果你使用 VS Code/PyCharm)
+.idea/
+.vscode/
+
+# Jupyter Notebook Checkpoints & runtime files
+.ipynb_checkpoints/
+*.sqlite
+*.db
+
+# ----------------------------------------------------
+# 2. Jupyter Book/Pandoc/LaTeX 生成的报告文件
+# ----------------------------------------------------
+# Jupyter Book 的构建输出文件夹
+_build/
+
+# Jupyter Book 内部缓存
+.jupyter_book_cache/
+
+# LaTeX/Pandoc 临时文件 (用于生成 PDF)
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.dvi
+*.pdf # 如果你不想跟踪最终 PDF，请保留此行
+
+# ----------------------------------------------------
+# 3. 量化项目 (All Parity) 的运行时输出和数据
+# ----------------------------------------------------
+# 你的核心输出文件夹 (包含 plots, metrics, logs)
+outputs/
+
+# 你的中间/处理后的数据 (如果不需要跟踪)
+data/processed/
+data/raw/ 
+# 注意: 如果你希望跟踪原始数据 (raw)，可以注释掉上一行，只保留 processed/
+
+# 你手动创建的用于报告的文件夹 (如果不需要跟踪)
+analysis_outputs/
+
+# ----------------------------------------------------
+# 4. 操作系统临时文件
+# ----------------------------------------------------
+.DS_Store # Mac OS
+Thumbs.db # Windows# ----------------------------------------------------
+# 1. 编译/环境/Python Artifacts
+# ----------------------------------------------------
+# Python 编译字节码文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 虚拟环境文件夹 (你的 replication_env_311)
+replication_env_311/
+.venv/
+env/
+
+# IDE/编辑器生成的文件 (如果你使用 VS Code/PyCharm)
+.idea/
+.vscode/
+
+# Jupyter Notebook Checkpoints & runtime files
+.ipynb_checkpoints/
+*.sqlite
+*.db
+
+# ----------------------------------------------------
+# 2. Jupyter Book/Pandoc/LaTeX 生成的报告文件
+# ----------------------------------------------------
+# Jupyter Book 的构建输出文件夹
+_build/
+
+# Jupyter Book 内部缓存
+.jupyter_book_cache/
+
+# LaTeX/Pandoc 临时文件 (用于生成 PDF)
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.dvi
+*.pdf # 如果你不想跟踪最终 PDF，请保留此行
+
+# ----------------------------------------------------
+# 3. 量化项目 (All Parity) 的运行时输出和数据
+# ----------------------------------------------------
+# 你的核心输出文件夹 (包含 plots, metrics, logs)
+outputs/
+
+# 你的中间/处理后的数据 (如果不需要跟踪)
+data/processed/
+data/raw/ 
+# 注意: 如果你希望跟踪原始数据 (raw)，可以注释掉上一行，只保留 processed/
+
+# 你手动创建的用于报告的文件夹 (如果不需要跟踪)
+analysis_outputs/
+
+# ----------------------------------------------------
+# 4. 操作系统临时文件
+# ----------------------------------------------------
+.DS_Store # Mac OS
+Thumbs.db # Windows

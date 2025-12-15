@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Yongpeng Fu">
+<meta name="author" content="Zhengyu Zou">
+<meta name="dcterms.date" content="2025-12-27">
+<meta name="keywords" content="trading strategies, quantitative analysis, risk parity">
+
+<title>Leverage Aversion Revisited: Mitigating Correlation Risk in Risk Parity Portfolios via Trend Filtering</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="Parity_Replication_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Parity_Replication_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Parity_Replication_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Parity_Replication_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="Parity_Replication_files/libs/quarto-html/popper.min.js"></script>
+<script src="Parity_Replication_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Parity_Replication_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Parity_Replication_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Parity_Replication_files/libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Parity_Replication_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Parity_Replication_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Parity_Replication_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#paper-summary" id="toc-paper-summary" class="nav-link" data-scroll-target="#paper-summary">Paper Summary</a></li>
+  <li><a href="#hypothesis-overview" id="toc-hypothesis-overview" class="nav-link" data-scroll-target="#hypothesis-overview">Hypothesis Overview</a>
+  <ul class="collapse">
+  <li><a href="#hypothesis-1-the-risk-parity-proposition" id="toc-hypothesis-1-the-risk-parity-proposition" class="nav-link" data-scroll-target="#hypothesis-1-the-risk-parity-proposition">Hypothesis 1: The Risk Parity Proposition</a></li>
+  <li><a href="#hypothesis-2-cost-of-complexity-under-correlation-spikes" id="toc-hypothesis-2-cost-of-complexity-under-correlation-spikes" class="nav-link" data-scroll-target="#hypothesis-2-cost-of-complexity-under-correlation-spikes">Hypothesis 2: Cost of Complexity under Correlation Spikes</a></li>
+  <li><a href="#hypothesis-3-efficacy-of-active-deleveraging-via-trend-filtering" id="toc-hypothesis-3-efficacy-of-active-deleveraging-via-trend-filtering" class="nav-link" data-scroll-target="#hypothesis-3-efficacy-of-active-deleveraging-via-trend-filtering">Hypothesis 3: Efficacy of Active Deleveraging via Trend Filtering</a></li>
+  </ul></li>
+  <li><a href="#literature-review" id="toc-literature-review" class="nav-link" data-scroll-target="#literature-review">Literature Review</a></li>
+  <li><a href="#replication" id="toc-replication" class="nav-link" data-scroll-target="#replication">Replication</a>
+  <ul class="collapse">
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a>
+  <ul class="collapse">
+  <li><a href="#replication-data-construction" id="toc-replication-data-construction" class="nav-link" data-scroll-target="#replication-data-construction">Replication Data Construction</a></li>
+  <li><a href="#data-mapping-and-splicing" id="toc-data-mapping-and-splicing" class="nav-link" data-scroll-target="#data-mapping-and-splicing">Data Mapping and Splicing</a></li>
+  <li><a href="#synthetic-treasury-pricing-for-total-return" id="toc-synthetic-treasury-pricing-for-total-return" class="nav-link" data-scroll-target="#synthetic-treasury-pricing-for-total-return">Synthetic Treasury Pricing for Total Return</a></li>
+  </ul></li>
+  <li><a href="#replication-of-key-analytical-techniques" id="toc-replication-of-key-analytical-techniques" class="nav-link" data-scroll-target="#replication-of-key-analytical-techniques">Replication of Key Analytical Techniques</a></li>
+  <li><a href="#technique-1-naive-risk-parity-construction-inverse-volatility" id="toc-technique-1-naive-risk-parity-construction-inverse-volatility" class="nav-link" data-scroll-target="#technique-1-naive-risk-parity-construction-inverse-volatility">Technique 1: Naive Risk Parity Construction (Inverse-Volatility)</a>
+  <ul class="collapse">
+  <li><a href="#mathematical-derivation" id="toc-mathematical-derivation" class="nav-link" data-scroll-target="#mathematical-derivation">Mathematical Derivation</a></li>
+  <li><a href="#validation-unit-test" id="toc-validation-unit-test" class="nav-link" data-scroll-target="#validation-unit-test">Validation (Unit Test)</a></li>
+  <li><a href="#robustness-check" id="toc-robustness-check" class="nav-link" data-scroll-target="#robustness-check">Robustness Check</a></li>
+  </ul></li>
+  <li><a href="#technique-2-dynamic-volatility-targeting-and-leverage" id="toc-technique-2-dynamic-volatility-targeting-and-leverage" class="nav-link" data-scroll-target="#technique-2-dynamic-volatility-targeting-and-leverage">Technique 2: Dynamic Volatility Targeting and Leverage</a>
+  <ul class="collapse">
+  <li><a href="#validation-of-volatility-control" id="toc-validation-of-volatility-control" class="nav-link" data-scroll-target="#validation-of-volatility-control">Validation of Volatility Control</a></li>
+  </ul></li>
+  <li><a href="#technique-3-optimization-based-risk-parity-erc" id="toc-technique-3-optimization-based-risk-parity-erc" class="nav-link" data-scroll-target="#technique-3-optimization-based-risk-parity-erc">Technique 3: Optimization-Based Risk Parity (ERC)</a>
+  <ul class="collapse">
+  <li><a href="#optimization-formulation" id="toc-optimization-formulation" class="nav-link" data-scroll-target="#optimization-formulation">Optimization Formulation</a></li>
+  </ul></li>
+  <li><a href="#hypothesis-test-1-comparative-efficiency-of-naive-risk-parity-vs.-6040" id="toc-hypothesis-test-1-comparative-efficiency-of-naive-risk-parity-vs.-6040" class="nav-link" data-scroll-target="#hypothesis-test-1-comparative-efficiency-of-naive-risk-parity-vs.-6040">Hypothesis Test 1: Comparative Efficiency of Naive Risk Parity vs.&nbsp;60/40</a></li>
+  <li><a href="#hypothesis-test-2-cost-of-complexity-under-correlation-spikes" id="toc-hypothesis-test-2-cost-of-complexity-under-correlation-spikes" class="nav-link" data-scroll-target="#hypothesis-test-2-cost-of-complexity-under-correlation-spikes">Hypothesis Test 2: Cost of Complexity under Correlation Spikes</a></li>
+  <li><a href="#hypothesis-test-3-tail-risk-mitigation-via-trend-filtered-deleveraging" id="toc-hypothesis-test-3-tail-risk-mitigation-via-trend-filtered-deleveraging" class="nav-link" data-scroll-target="#hypothesis-test-3-tail-risk-mitigation-via-trend-filtered-deleveraging">Hypothesis Test 3: Tail-Risk Mitigation via Trend-Filtered Deleveraging</a>
+  <ul class="collapse">
+  <li><a href="#construction-of-the-trend-filtered-portfolio" id="toc-construction-of-the-trend-filtered-portfolio" class="nav-link" data-scroll-target="#construction-of-the-trend-filtered-portfolio">Construction of the Trend-Filtered Portfolio</a></li>
+  <li><a href="#tail-risk-metric-maximum-drawdown" id="toc-tail-risk-metric-maximum-drawdown" class="nav-link" data-scroll-target="#tail-risk-metric-maximum-drawdown">Tail-Risk Metric: Maximum Drawdown</a></li>
+  <li><a href="#inference-via-block-bootstrap-on-delta-mdd" id="toc-inference-via-block-bootstrap-on-delta-mdd" class="nav-link" data-scroll-target="#inference-via-block-bootstrap-on-delta-mdd">Inference via Block Bootstrap on <span class="math inline">\(\Delta MDD\)</span></a></li>
+  <li><a href="#robustness-to-trend-parameterization" id="toc-robustness-to-trend-parameterization" class="nav-link" data-scroll-target="#robustness-to-trend-parameterization">Robustness to Trend Parameterization</a></li>
+  <li><a href="#drawdown-dynamics-the-underwater-view" id="toc-drawdown-dynamics-the-underwater-view" class="nav-link" data-scroll-target="#drawdown-dynamics-the-underwater-view">Drawdown Dynamics (The “Underwater” View)</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#extended-analysis-1-the-real-world-implementation-gap" id="toc-extended-analysis-1-the-real-world-implementation-gap" class="nav-link" data-scroll-target="#extended-analysis-1-the-real-world-implementation-gap">Extended Analysis 1: The “Real-World” Implementation Gap</a>
+  <ul class="collapse">
+  <li><a href="#friction-decomposition-turnover-transaction-costs" id="toc-friction-decomposition-turnover-transaction-costs" class="nav-link" data-scroll-target="#friction-decomposition-turnover-transaction-costs">Friction Decomposition (Turnover &amp; Transaction Costs)</a></li>
+  <li><a href="#the-tax-drag-differential-tax-treatment" id="toc-the-tax-drag-differential-tax-treatment" class="nav-link" data-scroll-target="#the-tax-drag-differential-tax-treatment">The Tax Drag: Differential Tax Treatment</a></li>
+  <li><a href="#final-net-of-everything-verdict" id="toc-final-net-of-everything-verdict" class="nav-link" data-scroll-target="#final-net-of-everything-verdict">Final “Net-of-Everything” Verdict</a></li>
+  </ul></li>
+  <li><a href="#overfitting" id="toc-overfitting" class="nav-link" data-scroll-target="#overfitting">Overfitting</a>
+  <ul class="collapse">
+  <li><a href="#regime-dependence-the-bond-bull-bias" id="toc-regime-dependence-the-bond-bull-bias" class="nav-link" data-scroll-target="#regime-dependence-the-bond-bull-bias">Regime Dependence (The “Bond Bull” Bias)</a></li>
+  <li><a href="#model-complexity-and-optimization-noise" id="toc-model-complexity-and-optimization-noise" class="nav-link" data-scroll-target="#model-complexity-and-optimization-noise">Model Complexity and Optimization Noise</a></li>
+  <li><a href="#the-frictionless-assumption" id="toc-the-frictionless-assumption" class="nav-link" data-scroll-target="#the-frictionless-assumption">The “Frictionless” Assumption</a></li>
+  <li><a href="#parameter-stability-vs.-structural-fragility" id="toc-parameter-stability-vs.-structural-fragility" class="nav-link" data-scroll-target="#parameter-stability-vs.-structural-fragility">Parameter Stability vs.&nbsp;Structural Fragility</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#future-work" id="toc-future-work" class="nav-link" data-scroll-target="#future-work">Future Work</a></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
+  <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix">Appendix</a>
+  <ul class="collapse">
+  <li><a href="#appendix-a-data-construction-validation" id="toc-appendix-a-data-construction-validation" class="nav-link" data-scroll-target="#appendix-a-data-construction-validation">Appendix A: Data Construction &amp; Validation</a>
+  <ul class="collapse">
+  <li><a href="#a.1-synthetic-treasury-proxy-validation" id="toc-a.1-synthetic-treasury-proxy-validation" class="nav-link" data-scroll-target="#a.1-synthetic-treasury-proxy-validation">A.1 Synthetic Treasury Proxy Validation</a></li>
+  <li><a href="#a.2-us-equity-proxy-validation" id="toc-a.2-us-equity-proxy-validation" class="nav-link" data-scroll-target="#a.2-us-equity-proxy-validation">A.2 US Equity Proxy Validation</a></li>
+  <li><a href="#a.3-corporate-credit-proxy-validation" id="toc-a.3-corporate-credit-proxy-validation" class="nav-link" data-scroll-target="#a.3-corporate-credit-proxy-validation">A.3 Corporate Credit Proxy Validation</a></li>
+  <li><a href="#a.4-commodities-proxy-validation" id="toc-a.4-commodities-proxy-validation" class="nav-link" data-scroll-target="#a.4-commodities-proxy-validation">A.4 Commodities Proxy Validation</a></li>
+  <li><a href="#a.5-algorithmic-unit-test-ex-ante-risk-contributions" id="toc-a.5-algorithmic-unit-test-ex-ante-risk-contributions" class="nav-link" data-scroll-target="#a.5-algorithmic-unit-test-ex-ante-risk-contributions">A.5 Algorithmic Unit Test (Ex-Ante Risk Contributions)</a></li>
+  <li><a href="#a.6-volatility-clustering-evidence" id="toc-a.6-volatility-clustering-evidence" class="nav-link" data-scroll-target="#a.6-volatility-clustering-evidence">A.6 Volatility Clustering Evidence</a></li>
+  </ul></li>
+  <li><a href="#appendix-b-robustness-attribution" id="toc-appendix-b-robustness-attribution" class="nav-link" data-scroll-target="#appendix-b-robustness-attribution">Appendix B: Robustness &amp; Attribution</a>
+  <ul class="collapse">
+  <li><a href="#b.1-sub-period-performance-stability" id="toc-b.1-sub-period-performance-stability" class="nav-link" data-scroll-target="#b.1-sub-period-performance-stability">B.1 Sub-period Performance Stability</a></li>
+  <li><a href="#b.2-ex-post-realized-risk-contributions" id="toc-b.2-ex-post-realized-risk-contributions" class="nav-link" data-scroll-target="#b.2-ex-post-realized-risk-contributions">B.2 Ex-Post Realized Risk Contributions</a></li>
+  </ul></li>
+  <li><a href="#appendix-c-extended-case-studies" id="toc-appendix-c-extended-case-studies" class="nav-link" data-scroll-target="#appendix-c-extended-case-studies">Appendix C: Extended Case Studies</a>
+  <ul class="collapse">
+  <li><a href="#c.1-the-whiplash-of-2023-why-erc-missed-the-recovery" id="toc-c.1-the-whiplash-of-2023-why-erc-missed-the-recovery" class="nav-link" data-scroll-target="#c.1-the-whiplash-of-2023-why-erc-missed-the-recovery">C.1 The “Whiplash” of 2023: Why ERC Missed the Recovery</a></li>
+  <li><a href="#c.2-trend-signal-mechanics-the-2022-bond-exit" id="toc-c.2-trend-signal-mechanics-the-2022-bond-exit" class="nav-link" data-scroll-target="#c.2-trend-signal-mechanics-the-2022-bond-exit">C.2 Trend Signal Mechanics: The 2022 Bond Exit</a></li>
+  <li><a href="#c.3-long-term-structural-evolution" id="toc-c.3-long-term-structural-evolution" class="nav-link" data-scroll-target="#c.3-long-term-structural-evolution">C.3 Long-Term Structural Evolution</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Parity_Replication.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li><li><a href="Parity_Replication.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Leverage Aversion Revisited: Mitigating Correlation Risk in Risk Parity Portfolios via Trend Filtering</h1>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Authors</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author"><a href="https://github.com/VikingScott">Yongpeng Fu</a> <a href="mailto:vflazarus@outlook.com" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            University of Illinois,Urbana-Champaign
+          </p>
+      </div>
+    <div class="quarto-title-meta-contents">
+    <p class="author">Zhengyu Zou <a href="mailto:zzou5@illinois.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            University of Illinois,Urbana-Champaign
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 27, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+<div>
+  <div class="abstract">
+    <div class="block-title">Abstract</div>
+    <p>This study investigates the validity and implementation challenges of Risk Parity strategies, grounded in the leverage aversion theory proposed by Asness, Frazzini, and Pedersen (2012). We first replicate a Naive Risk Parity baseline, confirming that a leverage-constrained environment theoretically favors safer assets, yet we find that standard covariance-based optimization (Equal Risk Contribution) paradoxically underperforms during high-correlation regimes like the 2022 inflation shock. To address this model risk, we propose and rigorously test a “Cash-Reserve Trend Risk Parity” framework that integrates a moving-average filter to actively deleverage during systemic drawdowns. Our results demonstrate that while the sophisticated ERC model suffers from overfitting and “diversification penalties” in correlated markets, the trend-augmented approach significantly reduces maximum drawdown and improves risk-adjusted returns by avoiding the “bond trap.” Furthermore, we conduct a comprehensive “real-world” friction analysis, accounting for transaction costs, ETF fees, and differential tax treatment between long-term holdings and high-turnover trend signals. We conclude that while trend-following introduces higher turnover and tax drag, its ability to mitigate tail risk makes it a superior, robust implementation for practical institutional mandates compared to static risk parity models.</p>
+  </div>
+</div>
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>trading strategies, quantitative analysis, risk parity</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Risk parity (RP) portfolios have become a prominent alternative to traditional stock-heavy allocations such as 60/40. While RP often looks like a simple heuristic—“allocate more to safer assets and less to risky assets”—Leverage Aversion and Risk Parity (Asness, Frazzini, and Pedersen, 2012) provides a unifying theoretical explanation: when many investors are unwilling or unable to apply leverage, they tend to “reach for risk” by buying higher-beta assets to achieve higher expected returns. This demand pressure flattens the Security Market Line (SML), implying that low-risk assets can offer unusually strong risk-adjusted returns, whereas high-risk assets can be overpriced and deliver weaker risk-adjusted performance. In that world, a portfolio that overweights low-risk assets and scales its overall risk level via leverage is not merely an empirical curiosity—it is a natural outcome of equilibrium pricing under leverage frictions.</p>
+<p>This project replicates the paper’s core risk parity construction using a four-asset universe aligned with the original study—equities, intermediate/long duration government bonds, credit, and commodities—and extends the analysis to modern “retail feasibility” constraints over a long sample (1990–2025). Following the spirit of the paper, we implement a transparent and reproducible RP baseline based on inverse-volatility allocation with a three-year (36-month) rolling estimation window, and then apply volatility targeting so that RP can be compared fairly to conventional benchmarks at similar risk. We further study how real-world frictions—most importantly leverage caps and borrowing spreads—reshape the strategy’s realized performance. Finally, motivated by the paper’s discussion of deleveraging risk during stress periods, we evaluate a trend-filtered (“cash-reserve”) overlay designed to proactively reduce exposure when major asset sleeves fall below trend, providing an engineering-oriented response to tail-risk regimes such as 2008 and 2022.</p>
+</section>
+<section id="paper-summary" class="level1">
+<h1>Paper Summary</h1>
+<!-- Start with a single paragraph in précis form. -->
+<!-- See @PetersonReplication p. 1-2 for details. -->
+<!-- Complete this section with paragraphs describing each major point in the paper. -->
+<!-- The entire summary will be 4-10 paragraphs. -->
+<p>This replication project critically examines the methodology and empirical results of Asness, Frazzini, and Pedersen (2012), which proposes a multi-asset class portfolio strategy, primarily leveraging the principle of Equal Risk Contribution (ERC), often referred to as Risk Parity. The source paper hypothesizes that by allocating capital such that each asset contributes an equal amount of volatility to the total portfolio risk, one can achieve superior risk-adjusted returns (Sharpe ratio) and greater portfolio stability compared to traditional market-cap or naive weighting schemes. Our primary objective is to reproduce the core ERC construction methodology and backtest results using modern data and robust Python engineering practices, followed by a rigorous analysis of the strategy’s sensitivity, out-of-sample performance, and potential for extension.</p>
+<p>The paper’s first major contribution lies in its selection of assets, typically including major global market indices, bonds, commodities, and credit instruments, acknowledging their low historical correlation. The paper details the data cleaning and processing required to achieve consistent return streams, particularly for assets like Treasury bonds and commodities where pricing involves specific models. The central theme is that portfolio benefits arise not just from diversification across assets, but also through diversification of risk contributions.</p>
+<p>The analytical core of the paper is the optimization model, which seeks to minimize the distance between the realized risk contribution of each asset and the target risk contribution (equal for all assets). The paper rigorously defines the risk contribution metric and outlines the numerical solution technique, emphasizing the need for robust covariance and volatility estimation, often using exponentially weighted moving averages or similar techniques to capture volatility clustering.</p>
+<p>The source paper presents compelling empirical evidence, claiming that the ERC strategy consistently delivers a higher Sharpe Ratio and lower maximum drawdown than a traditional 60/40 benchmark or a minimum variance portfolio across multiple market cycles. The performance claims are supported by metrics such as cumulative wealth curves, rolling Sharpe ratios, and leverage dynamics over the backtest period.</p>
+<p>Crucially, the paper addresses potential pitfalls by conducting sensitivity tests on key parameters, such as the lookback window for volatility estimation. This section of the paper attempts to demonstrate that the results are not merely a product of data mining or over-optimization, a necessary element for any credible systematic strategy.</p>
+<p>Finally, the paper proposes several extensions, such as incorporating alternative allocation rules (e.g., dynamic trend-following signals) or applying the ERC framework to different asset subsets. Furthermore, it addresses practical implementation issues, including the impact of transaction costs and taxes on the final realized returns, which is vital for real-world applicability.</p>
+</section>
+<section id="hypothesis-overview" class="level1">
+<h1>Hypothesis Overview</h1>
+<!-- Formally detail the paper's key hypotheses. -->
+<!-- See @PetersonReplication p. 2 for details. -->
+<section id="hypothesis-1-the-risk-parity-proposition" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-1-the-risk-parity-proposition">Hypothesis 1: The Risk Parity Proposition</h2>
+<p>This hypothesis test evaluates the central empirical implication of <em>leverage-aversion</em> theory as operationalized in <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> : <strong>after scaling portfolios to a common risk target, a diversified allocation that weights assets inversely to their risk and employs leverage when necessary should exhibit superior risk-adjusted performance relative to a conventional capital-allocation benchmark</strong>.</p>
+<p>In our setting, we assess this claim using an implementable <strong>Naive Risk Parity</strong> portfolio constructed from liquid ETF proxies. Portfolio leverage is implemented through a <strong>volatility-targeting mechanism</strong> and explicitly incorporates <strong>financing costs</strong> (and any additional implemented frictions). Let <span class="math inline">\(SR(\cdot)\)</span> denote the annualized Sharpe ratio computed from monthly excess returns. The alternative hypothesis is</p>
+<p><span class="math display">\[
+H_{1}:\; SR\!\left(RP^{\text{Naive}}_{\text{net}}\right) - SR(60/40) &gt; 0,
+\]</span></p>
+<p>with the corresponding null hypothesis</p>
+<p><span class="math display">\[
+H_{0}:\; SR\!\left(RP^{\text{Naive}}_{\text{net}}\right) - SR(60/40) \le 0.
+\]</span></p>
+<p>Here, <span class="math inline">\(RP^{\text{Naive}}_{\text{net}}\)</span> denotes the volatility-targeted, levered inverse-volatility (naive risk parity) portfolio <strong>net of financing spreads</strong> (and any implemented trading frictions), while <span class="math inline">\(60/40\)</span> denotes an <strong>unlevered</strong> benchmark portfolio constructed—where feasible—from the same investable universe.</p>
+</section>
+<section id="hypothesis-2-cost-of-complexity-under-correlation-spikes" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-2-cost-of-complexity-under-correlation-spikes">Hypothesis 2: Cost of Complexity under Correlation Spikes</h2>
+<p>This hypothesis tests whether a covariance-aware Equal Risk Contribution (ERC) optimizer becomes counterproductive precisely in the market environments it is meant to stabilize. The empirical claim is that when cross-asset correlations spike—compressing diversification benefits—ERC’s dependence on the full covariance matrix can induce state-contingent allocation shifts (e.g., reallocating away from equities and toward the “perceived safer” sleeve), which may be pro-cyclical with respect to the correlation shock. If this “correlation penalty” is present, ERC should deliver lower conditional performance than the simpler inverse-volatility (Naive RP) rule within high-correlation states, even if ERC achieves “cleaner” risk balancing mechanically.</p>
+<p>Let <span class="math inline">\(r^{ERC}_t\)</span> and <span class="math inline">\(r^{Naive}_t\)</span> denote the monthly total returns of the ERC and Naive Risk Parity portfolios at month <span class="math inline">\(t\)</span>, and let <span class="math inline">\(r_{f,t}\)</span> denote the monthly risk-free rate. Define monthly excess returns <span class="math display">\[
+x^{ERC}_t = r^{ERC}_t - r_{f,t},
+\qquad
+x^{Naive}_t = r^{Naive}_t - r_{f,t},
+\]</span> and define the monthly relative excess return (ERC minus Naive) as <span class="math display">\[
+d_t \equiv x^{ERC}_t - x^{Naive}_t.
+\]</span></p>
+<p>To identify correlation-stress environments, define <span class="math inline">\(Corr_t\)</span> as the <strong>12-month rolling average of pairwise off-diagonal correlations</strong> among the four asset classes (Equities, Bonds, Credit, Commodities), computed from the same monthly return data used in portfolio construction. Let <span class="math inline">\(\tau\)</span> be the <strong>80th percentile (top quintile)</strong> of the historical distribution of <span class="math inline">\(Corr_t\)</span> over the full sample, and define the high-correlation regime set <span class="math display">\[
+S \equiv \{t: Corr_t \ge \tau\}.
+\]</span></p>
+<p>The dependent variable for H2 is the conditional mean relative performance of ERC versus Naive within <span class="math inline">\(S\)</span>, reported in annualized units: <span class="math display">\[
+\Delta\mu^{ann}_S \equiv 12\cdot \mathbb{E}\left[d_t \mid t\in S\right].
+\]</span></p>
+<p>The hypothesis is one-sided, consistent with the “cost of complexity” claim: <span class="math display">\[
+H_1: \Delta\mu^{ann}_S &lt; 0,
+\qquad\text{vs.}\qquad
+H_0: \Delta\mu^{ann}_S \ge 0.
+\]</span></p>
+<p>Intuitively, rejecting <span class="math inline">\(H_0\)</span> in favor of <span class="math inline">\(H_1\)</span> would support the interpretation that ERC loses its edge exactly when correlations rise—i.e., when covariance estimation dominates the optimizer’s decisions and diversification benefits disappear—making the more complex allocation rule less robust than the simpler inverse-volatility baseline in those stress states.</p>
+</section>
+<section id="hypothesis-3-efficacy-of-active-deleveraging-via-trend-filtering" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-3-efficacy-of-active-deleveraging-via-trend-filtering">Hypothesis 3: Efficacy of Active Deleveraging via Trend Filtering</h2>
+<p>Hypothesis 3 tests whether a simple trend-following cash-reserve overlay improves the practical implementability of levered Risk Parity by reducing crash exposure in precisely the regimes where static diversification breaks down. The core claim is that when major sleeves of the Risk Parity portfolio enter sustained drawdowns (e.g., equity bear markets or inflation-driven bond selloffs), a moving-average trend rule can mechanically de-risk—by reallocating capital from assets below trend into cash—thereby improving “survivability” outcomes (maximum drawdown and drawdown-adjusted efficiency) relative to the static Naive Risk Parity baseline.</p>
+<p>Let <span class="math inline">\(RP^{\text{Naive}}_{\text{net}}\)</span> denote the volatility-targeted, levered Naive Risk Parity portfolio net of financing spreads, and let <span class="math inline">\(RP^{\text{Trend}}_{\text{net}}\)</span> denote the same portfolio augmented with a trend filter. The trend filter sets (or scales down) exposure for any asset sleeve whose price falls below a pre-specified moving average, with the displaced capital allocated to the risk-free asset.</p>
+<p>Let <span class="math inline">\(MDD(\cdot)\)</span> denote the maximum drawdown computed from the cumulative wealth process over the full sample. Since drawdowns are defined as negative percentage declines from peak, a “better” drawdown corresponds to a value closer to zero (i.e., less negative). The alternative hypothesis is that the trend overlay reduces tail risk:</p>
+<p><span class="math display">\[
+H_{1}: MDD\left(RP^{\text{Trend}}_{\text{net}}\right) - MDD\left(RP^{\text{Naive}}_{\text{net}}\right) &gt; 0,
+\]</span></p>
+<p>with the corresponding null hypothesis</p>
+<p><span class="math display">\[
+H_{0}: MDD\left(RP^{\text{Trend}}_{\text{net}}\right) - MDD\left(RP^{\text{Naive}}_{\text{net}}\right) \le 0.
+\]</span></p>
+<p>Note that because <span class="math inline">\(MDD\)</span> represents a negative magnitude (e.g., <span class="math inline">\(-0.20\)</span>), the inequality <span class="math inline">\(\Delta MDD &gt; 0\)</span> implies that the Trend portfolio experiences a <em>less severe</em> decline than the Naive baseline (e.g., <span class="math inline">\(-0.20 - (-0.30) = +0.10 &gt; 0\)</span>). While we treat drawdown-adjusted efficiency (e.g., the Calmar ratio) and risk-adjusted performance (Sharpe) as secondary outcomes, the primary test focuses on the structural reduction of left-tail crash risk, recognizing that trend filtering is a survival mechanism rather than a pure return-maximization engine.</p>
+</section>
+</section>
+<section id="literature-review" class="level1">
+<h1>Literature Review</h1>
+<!-- Write your literature review. See @PetersonReplication p. 2-4 for details. This -->
+<!-- section must include paragraphs at least for the 3-5 key references for the -->
+<!-- paper to be replicated, similar work, implementation references, more recent -->
+<!-- references where available, and any references with attempt to refute the -->
+<!-- hypotheses of the replicated work.  A full literature review may contain 20-50 -->
+<!-- references.  Not all will be covered in the same level of detail.  Important -->
+<!-- references probably warrant an entire paragraph, but similar work can probably -->
+<!-- be covered together in 1-2 paragraphs for multiple related works. -->
+<p>The foundational concept of “risk parity” was originally articulated by Qian (2005), who argued that traditional asset allocations—such as the ubiquitous 60/40 stock-bond split—fail to achieve true diversification because equities disproportionately dominate the portfolio’s risk profile, often accounting for approximately 90% of total volatility (<span class="citation" data-cites="Qian2005">Qian (<a href="#ref-Qian2005" role="doc-biblioref">2005</a>)</span>). Qian proposed that capital should instead be allocated inversely to risk (volatility), ensuring that risk is distributed equally across asset classes (<span class="citation" data-cites="Qian2005">Qian (<a href="#ref-Qian2005" role="doc-biblioref">2005</a>)</span>). This work established the baseline for “naive risk parity,” suggesting that balancing risk contributions yields a more diversified portfolio with potentially superior risk-adjusted returns (<span class="citation" data-cites="Qian2005">Qian (<a href="#ref-Qian2005" role="doc-biblioref">2005</a>)</span>). Building on this practitioner-focused foundation, Maillard, Roncalli, and Teïletche (2010) formalized the Equal Risk Contribution (ERC) portfolio. They demonstrated that the ERC strategy requires no expected return assumptions and mathematically positions its volatility between that of the minimum-variance portfolio and the 1/N equal-weight portfolio (<span class="citation" data-cites="Maillard2010">Maillard, Roncalli, and Teïletche (<a href="#ref-Maillard2010" role="doc-biblioref">2010</a>)</span>). Their empirical results indicated that ERC portfolios offer a robust trade-off, delivering effective diversification and competitive performance relative to both equal-weight and minimum-variance benchmarks (<span class="citation" data-cites="Maillard2010">Maillard, Roncalli, and Teïletche (<a href="#ref-Maillard2010" role="doc-biblioref">2010</a>)</span>).</p>
+<p>A critical theoretical justification for these risk-based allocations was provided by Asness, Frazzini, and Pedersen (2012) through the theory of leverage aversion. They argued that because many investors are constrained from using leverage, safer assets like bonds must offer higher Sharpe ratios to attract investment (<span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span>). Consequently, the traditional market portfolio becomes suboptimal. A risk parity portfolio that overweights these safer assets and applies leverage aligns more closely with the theoretical tangency portfolio. Empirically, Asness et al.&nbsp;showed that a levered risk parity strategy between U.S. stocks and bonds would have significantly outperformed a 60/40 portfolio from 1926 to 2010 (<span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span>). However, subsequent research by Chaves et al.&nbsp;(2011) offered a more nuanced perspective. While they found that risk parity provides better risk diversification than equal-weighting and outperforms mean-variance optimized portfolios (which suffer from estimation errors), it does not consistently outperform a naive 1/N portfolio on a risk-adjusted basis over long samples. They emphasized that the strategy’s success is highly dependent on the asset universe selected (<span class="citation" data-cites="Chaves2011">Chaves et al. (<a href="#ref-Chaves2011" role="doc-biblioref">2011</a>)</span>).</p>
+<p>More recent scholarship has presented challenges to the risk parity hypothesis, particularly regarding its dependence on bond market regimes. Sullivan and Wey (2025) reported that risk parity strategies generally underperformed traditional 60/40 portfolios when analyzing data back to 1951, exhibiting lower Sharpe and Sortino ratios. They attribute this to the strategy’s vulnerability to bond shocks; specifically, leveraged bond-heavy portfolios struggle when starting yields are low and interest rates subsequently spike (<span class="citation" data-cites="Sullivan2025">Sullivan and Wey (<a href="#ref-Sullivan2025" role="doc-biblioref">2025</a>)</span>). Crucially, Sullivan and Wey suggest that a “naive” risk parity approach that ignores expected returns is suboptimal, and that performance could be materially improved by incorporating return forecasting or trend signals (<span class="citation" data-cites="Sullivan2025">Sullivan and Wey (<a href="#ref-Sullivan2025" role="doc-biblioref">2025</a>)</span>).</p>
+<p>To address the limitations of static risk allocations, this research also examines trend-following strategies as a potential augmentation. Moskowitz, Ooi, and Pedersen (2012) identified a pervasive “time-series momentum” effect, where an asset’s past 12-month excess return positively predicts its future performance across diverse asset classes. Unlike cross-sectional momentum, this phenomenon relies on an asset’s own trend and was found to be consistent across 58 liquid futures markets (<span class="citation" data-cites="Moskowitz2012">Moskowitz, Ooi, and Pedersen (<a href="#ref-Moskowitz2012" role="doc-biblioref">2012</a>)</span>). Expanding on this, Hurst, Ooi, and Pedersen (2017) provided evidence spanning back to 1880, demonstrating that trend-following has been consistently profitable across various economic regimes, including the Great Depression and the stagflation of the 1970s. Most importantly for risk parity applications, Hurst et al.&nbsp;noted that trend-following strategies perform particularly well during large market drawdowns (such as the 2008 financial crisis) by cutting long exposure to crashing markets. This suggests that a trend-following overlay could serve as a vital diversifier, enhancing the resilience of risk parity portfolios during periods where bond-equity correlations break down (<span class="citation" data-cites="Hurst2017">Hurst, Ooi, and Pedersen (<a href="#ref-Hurst2017" role="doc-biblioref">2017</a>)</span>).</p>
+</section>
+<section id="replication" class="level1">
+<h1>Replication</h1>
+<!-- Now we move on to the actual replication.  The sections included here are all -->
+<!-- necessary, but the may not be sufficient.  Add additional sections and sub-sections -->
+<!-- as required to describe your work and make your analytical case. -->
+<!-- Describe the approach that the replication is taking to Data. -->
+<!-- See @PetersonReplication p. 4-5 for details. -->
+<!-- Describe both the data used in the original paper, and the data you are using -->
+<!-- for replication.  For your replicated data, include detailed descriptions of -->
+<!-- obtaining, parsing, and cleaning the data to prepare it for use.  Describe data -->
+<!-- quality issues. -->
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>To validate the hypothesis of leverage aversion, <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> constructed a comprehensive dataset spanning multiple asset classes and geographies. The primary objective of their data collection was to compare the risk-adjusted performance of risk parity portfolios against capitalization-weighted benchmarks over long investment horizons.</p>
+<p>The core of their empirical analysis focused on U.S. asset markets, covering the period from 1926 to 2010. For this dataset, the authors utilized the CRSP value-weighted market portfolio to represent U.S. equities and 10-year U.S. Treasury bonds to represent the fixed-income component. This extensive 85-year window was critical for demonstrating the robustness of the risk parity premium across diverse economic regimes, including the Great Depression, the stagflation of the 1970s, and the 2008 Global Financial Crisis.</p>
+<p>Beyond the domestic analysis, the source paper expanded its scope to a global universe to verify that the results were not driven by US-specific idiosyncrasies. Their broad dataset included equity indices, government bonds, corporate credit, and commodities across G10 nations. A defining characteristic of their data construction was the use of futures markets and excess returns. By utilizing futures data or subtracting the risk-free rate (typically U.S. Treasury bills) from total returns, the authors ensured that the analysis isolated the risk premia of the assets while implicitly accounting for the financing costs required to leverage safer assets.</p>
+<p>This rigorous approach to data selection—prioritizing long histories and net-of-financing excess returns—established the standard for risk parity research. It underscores the necessity for this replication study to construct a similarly robust dataset that accounts for the “cost of leverage,” even when using modern exchange-traded funds (ETFs) as proxies.</p>
+<section id="replication-data-construction" class="level3">
+<h3 class="anchored" data-anchor-id="replication-data-construction">Replication Data Construction</h3>
+<p>A significant barrier to replicating institutional finance research is the reliance on proprietary data sources (e.g., CRSP, Bloomberg, and continuous futures contracts) that are unavailable to retail practitioners. <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> constructed their “Long Sample” (1926–2010) using CRSP data and their “Broad Sample” (1973–2010) using futures data, which implicitly embed financing costs.</p>
+<p>To overcome these limitations while maintaining rigorous standards, this study adopts a “Dual-Track” data architecture. This approach splices high-quality historical indices with modern investable ETFs to create a continuous monthly time series from January 1990 to Present. This timeframe provides a 35-year observation window, capturing multiple economic regimes including the 2000 Dot-com bust, the 2008 Global Financial Crisis, and the 2022 Inflationary Shock—a critical out-of-sample stress test not available in the original study.</p>
+</section>
+<section id="data-mapping-and-splicing" class="level3">
+<h3 class="anchored" data-anchor-id="data-mapping-and-splicing">Data Mapping and Splicing</h3>
+<p>We map the four core asset classes defined in <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> - Equities, Bonds, Credit, and Commodities—to accessible retail instruments. Where ETF history is insufficient (e.g., prior to 2002), we utilize “Historical Proxies” derived from raw index data or synthetic pricing models. <a href="#tbl-index-usage" class="quarto-xref">Table&nbsp;1</a> details this mapping.</p>
+<div class="cell" data-scrollable="true" data-execution_count="1">
+<div id="tbl-index-usage" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="1" data-scrollable="true">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-index-usage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Data Source Mapping (Original vs.&nbsp;Replication)
+</figcaption>
+<div aria-describedby="tbl-index-usage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="1">
+<style type="text/css">
+</style>
+
+<table id="T_46ca4" class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th id="T_46ca4_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Asset Class</th>
+<th id="T_46ca4_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Original Paper Proxy (Asness et al., 2012)</th>
+<th id="T_46ca4_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Our Replication Proxy (ETF)</th>
+<th id="T_46ca4_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Historical Proxy (Backfill &lt; 2002)</th>
+<th id="T_46ca4_level0_col4" class="col_heading level0 col4" data-quarto-table-cell-role="th">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_46ca4_row0_col0" class="data row0 col0">Global Equities</td>
+<td id="T_46ca4_row0_col1" class="data row0 col1">MSCI World / CRSP Value-Weighted</td>
+<td id="T_46ca4_row0_col2" class="data row0 col2">SPY (SPDR S&amp;P 500)</td>
+<td id="T_46ca4_row0_col3" class="data row0 col3">S&amp;P 500 Total Return Index</td>
+<td id="T_46ca4_row0_col4" class="data row0 col4">Yahoo Finance</td>
+</tr>
+<tr class="even">
+<td id="T_46ca4_row1_col0" class="data row1 col0">Global Bonds</td>
+<td id="T_46ca4_row1_col1" class="data row1 col1">CRSP U.S. Treasury Database (10Y)</td>
+<td id="T_46ca4_row1_col2" class="data row1 col2">IEF (iShares 7–10Y Treasury)</td>
+<td id="T_46ca4_row1_col3" class="data row1 col3">Synthetic 10Y Par Bond Model</td>
+<td id="T_46ca4_row1_col4" class="data row1 col4">FRED / Model</td>
+</tr>
+<tr class="odd">
+<td id="T_46ca4_row2_col0" class="data row2 col0">Credit</td>
+<td id="T_46ca4_row2_col1" class="data row2 col1">Barclays Capital U.S. Corporate Index</td>
+<td id="T_46ca4_row2_col2" class="data row2 col2">LQD (iShares Investment Grade Corp)</td>
+<td id="T_46ca4_row2_col3" class="data row2 col3">ICE BofA US Corporate Master TR</td>
+<td id="T_46ca4_row2_col4" class="data row2 col4">FRED</td>
+</tr>
+<tr class="even">
+<td id="T_46ca4_row3_col0" class="data row3 col0">Commodities</td>
+<td id="T_46ca4_row3_col1" class="data row3 col1">S&amp;P GSCI (Futures)</td>
+<td id="T_46ca4_row3_col2" class="data row3 col2">GSG (iShares S&amp;P GSCI)</td>
+<td id="T_46ca4_row3_col3" class="data row3 col3">S&amp;P GSCI Total Return Index</td>
+<td id="T_46ca4_row3_col4" class="data row3 col4">Investing.com</td>
+</tr>
+<tr class="odd">
+<td id="T_46ca4_row4_col0" class="data row4 col0">Risk-Free Rate</td>
+<td id="T_46ca4_row4_col1" class="data row4 col1">1-Month T-Bill / Repo / LIBOR</td>
+<td id="T_46ca4_row4_col2" class="data row4 col2">N/A (Used for calculation)</td>
+<td id="T_46ca4_row4_col3" class="data row4 col3">3-Month T-Bill Rate (TB3MS)</td>
+<td id="T_46ca4_row4_col4" class="data row4 col4">FRED</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="synthetic-treasury-pricing-for-total-return" class="level3">
+<h3 class="anchored" data-anchor-id="synthetic-treasury-pricing-for-total-return">Synthetic Treasury Pricing for Total Return</h3>
+<p>A key empirical constraint in this replication is the absence of a long-history <strong>total return</strong> benchmark for intermediate-duration U.S. Treasuries that is directly comparable to the post-2002 ETF proxy (IEF). The original study relies on the CRSP Monthly U.S. Treasury Database, which provides realized holding-period returns for constant-maturity Treasury positions. In the absence of CRSP access, we construct a synthetic constant-maturity Treasury total return series using a parsimonious <strong>par-bond pricing engine</strong> calibrated to publicly available Federal Reserve yields.</p>
+<p>Our approach simulates a strategy that, at each month-end <span class="math inline">\(t\)</span>, purchases a newly issued <strong>10-year par bond</strong> with face value <span class="math inline">\(F = 100\)</span>. The par assumption implies that the coupon rate at issuance equals the prevailing 10-year yield <span class="math inline">\(y^{10}_{t}\)</span> under a bond-equivalent, semiannual convention. The position is held for one month and liquidated at month-end <span class="math inline">\(t+1\)</span>. At sale, the bond has effectively “rolled down” the curve, with remaining maturity approximately 9 years and 11 months. The sale price is computed as a <strong>dirty price</strong> using semiannual discounting and <strong>fractional time-to-cashflow</strong> treatment: future coupon and principal cash flows are discounted using the month-end yield environment at <span class="math inline">\(t+1\)</span>, and the cashflow schedule is shifted by the holding period <span class="math inline">\(t = 1/12\)</span> to reflect the elapsed month.</p>
+<p>Formally, with semiannual payment frequency <span class="math inline">\(m = 2\)</span>, the coupon cashflow per period is <span class="math inline">\((c/m)F\)</span>, where <span class="math inline">\(c = y^{10}_{t}\)</span>. Let <span class="math inline">\(\{\tau_j\}\)</span> denote the remaining payment times (in years) from the purchase date. After holding for <span class="math inline">\(t = 1/12\)</span>, the remaining times become <span class="math inline">\(\{\tau_j - t\}\)</span> (restricted to positive values). The month-end sale price is then: <span class="math display">\[
+P^{\text{dirty}}_{t+1}
+=
+\sum_{j}\left(\frac{c}{m}F\right)\left(1+\frac{y_{t+1}}{m}\right)^{-m(\tau_j-t)}
++
+F\left(1+\frac{y_{t+1}}{m}\right)^{-m(\tau_{J}-t)}.
+\]</span></p>
+<p>Because the pricing formula yields a dirty valuation (accrual embedded via fractional timing), we do not add accrued interest separately. Consistent with the code implementation, the one-month total return is computed as: <span class="math display">\[
+TR_{t+1} = \frac{P^{\text{dirty}}_{t+1} - F}{F},
+\]</span> which captures price changes and interest accrual over the holding interval. Repeating this procedure month-by-month produces a synthetic Treasury total return series, which we then convert into an index level via cumulative compounding.</p>
+<p>To better approximate the economic roll-down effect, the engine optionally applies a <strong>rolldown-adjusted discount yield</strong> at the sale date. Specifically, when both 7-year and 10-year yields are available, we infer the local slope of the curve between 7Y and 10Y at <span class="math inline">\(t+1\)</span> and linearly extrapolate a one-month reduction in yield for a bond whose maturity shortens by <span class="math inline">\(1/12\)</span> year. This yields a discount rate: <span class="math display">\[
+y^{\text{sell}}_{t+1}
+=
+y^{10}_{t+1}
+-
+\left(\frac{y^{10}_{t+1}-y^{7}_{t+1}}{10-7}\right)\cdot \frac{1}{12},
+\]</span> which is used in the discount factors when pricing <span class="math inline">\(P^{\text{dirty}}_{t+1}\)</span>. When the 7-year yield is unavailable, the model defaults to a flat local curve assumption and discounts using the observed 10-year yield at <span class="math inline">\(t+1\)</span>.</p>
+<p>We validate this synthetic series by comparing it to the realized performance of IEF during the overlapping sample (2002–2025). The resulting synthetic total return series exhibits a correlation exceeding <span class="math inline">\(0.98\)</span> with IEF, supporting its use as a historical proxy for intermediate Treasury exposure in the pre-ETF period.</p>
+<div id="fig-valid-ief" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-valid-ief-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/01_data_quality/valid_04_bond_ief.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-valid-ief-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: U.S. Treasury proxy validation: synthetic 10-year par-bond total return series versus IEF (normalized growth, monthly).
+</figcaption>
+</figure>
+</div>
+<p><a href="#fig-valid-ief" class="quarto-xref">Figure&nbsp;1</a> shows that the synthetic Treasury total return proxy closely tracks IEF over the overlapping sample, supporting its use as a pre-ETF historical proxy.</p>
+<p>See <strong>?@appfiga-valid-spy</strong>, <strong>?@appfiga-valid-lqd</strong>, and <strong>?@appfiga-valid-gsg</strong>.</p>
+</section>
+</section>
+<section id="replication-of-key-analytical-techniques" class="level2">
+<h2 class="anchored" data-anchor-id="replication-of-key-analytical-techniques">Replication of Key Analytical Techniques</h2>
+<p>This study replicates the “Volatility-Targeted Levered Risk Parity” framework proposed by Asness et al.&nbsp;(2012), adapted for a modern retail implementation. Unlike the original study which utilized futures contracts (implicitly self-financing), our replication constructs the portfolio using ETFs (SPY, IEF, LQD, GSG) with explicit modeling of borrowing costs and transaction frictions. The backtest is conducted on a monthly frequency using month-end adjusted close prices. Unless otherwise stated, performance metrics are calculated on excess returns (<span class="math inline">\(XR_t = R_{t} - R_{f,t}\)</span>).</p>
+</section>
+<section id="technique-1-naive-risk-parity-construction-inverse-volatility" class="level2">
+<h2 class="anchored" data-anchor-id="technique-1-naive-risk-parity-construction-inverse-volatility">Technique 1: Naive Risk Parity Construction (Inverse-Volatility)</h2>
+<p>The “Naive” Risk Parity approach aims to equalize ex-ante risk contributions by assuming zero correlation between assets. This serves as a robust baseline against estimation errors in full covariance matrices.</p>
+<section id="mathematical-derivation" class="level3">
+<h3 class="anchored" data-anchor-id="mathematical-derivation">Mathematical Derivation</h3>
+<p>The risk contribution (<span class="math inline">\(RC_i\)</span>) of asset <span class="math inline">\(i\)</span> to the portfolio volatility <span class="math inline">\(\sigma_p\)</span> is defined as <span class="math inline">\(RC_i = w_i \cdot \frac{(\Sigma w)_i}{\sigma_p}\)</span>.Under the diagonal covariance approximation (assuming correlation <span class="math inline">\(\rho_{ij}=0\)</span> for <span class="math inline">\(i \neq j\)</span>), the portfolio variance simplifies to <span class="math inline">\(\sigma_p^2 = \sum w_i^2 \sigma_i^2\)</span>, and the risk contribution becomes proportional to the squared weight and variance:<span class="math display">\[RC_i \propto w_i^2 \sigma_i^2\]</span>Therefore, the condition of equal risk contributions (<span class="math inline">\(RC_i = RC_j\)</span>) implies that weights must be inversely proportional to volatility:<span class="math display">\[w_{t,i} \propto \frac{1}{\sigma_{t,i}}\]</span>In our implementation, <span class="math inline">\(\sigma_{t,i}\)</span> is the annualized standard deviation of monthly excess returns estimated over a 36-month rolling window. The final unlevered weights are normalized such that <span class="math inline">\(\sum w_{t,i} = 1\)</span>.</p>
+</section>
+<section id="validation-unit-test" class="level3">
+<h3 class="anchored" data-anchor-id="validation-unit-test">Validation (Unit Test)</h3>
+<div id="fig-exante-risk-contribution" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-exante-risk-contribution-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/02_component_testing/test_01_risk_contribution.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-exante-risk-contribution-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Ex-Ante Risk Contributions (Unlevered)
+</figcaption>
+</figure>
+</div>
+<p>This chart serves as a unit test for the algorithm. It confirms that under the diagonal covariance assumption used for construction, the implementation correctly equalizes the ex-ante risk budget (25% per asset).</p>
+</section>
+<section id="robustness-check" class="level3">
+<h3 class="anchored" data-anchor-id="robustness-check">Robustness Check</h3>
+<p><img src="plots\04_sensitivity\sensitivity_01_lookback.png" id="fig-rollingsharpe-naive-rp" class="img-fluid" alt="Estimation Window Sensitivity"> The Sharpe Ratio remains stable across lookback windows ranging from 12 to 48 months, confirming that the strategy’s performance is structurally robust.</p>
+</section>
+</section>
+<section id="technique-2-dynamic-volatility-targeting-and-leverage" class="level2">
+<h2 class="anchored" data-anchor-id="technique-2-dynamic-volatility-targeting-and-leverage">Technique 2: Dynamic Volatility Targeting and Leverage</h2>
+<p><span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> emphasize that risk parity portfolios must be levered to match the volatility of a benchmark (e.g., 60/40) to generate competitive returns. ### Leverage Engine We implement a dynamic leverage multiplier <span class="math inline">\(L_t\)</span>, calculated at the end of month <span class="math inline">\(t\)</span> using the information set <span class="math inline">\(\mathcal{F}_t\)</span>:<span class="math display">\[L_t = \min\left( \frac{\sigma_{target, t}}{\sigma_{RP, t}}, \quad \text{Cap}_{max} \right)\]</span><span class="math inline">\(\sigma_{target, t}\)</span>: The rolling 36-month realized volatility of the 60/40 Benchmark.<span class="math inline">\(\sigma_{RP, t}\)</span>: The ex-ante volatility of the unlevered Risk Parity portfolio. To ensure accurate risk targeting, we estimate <span class="math inline">\(\sigma_{RP, t}\)</span> using the full sample covariance matrix (accounting for correlations), distinct from the diagonal assumption used in weighting.<span class="math inline">\(\text{Cap}_{max}\)</span>: We impose a hard cap of 4.0x. While Regulation T limits initial margin to 50% (2x), institutional implementations often utilize portfolio margin or futures to achieve higher leverage. We select 4.0x as a representative upper bound for a sophisticated implementation. ### Net Excess Return Calculation To explicitly account for financing costs in an excess return framework, the net levered return is calculated as:<span class="math display">\[XR_{net, t+1} = L_t \cdot XR_{RP, t+1} - (L_t - 1) \cdot \text{Spread}\]</span>Here, the risk-free base rate is inherently removed in the excess return (<span class="math inline">\(XR\)</span>) calculation, so only the Spread (set to 80 bps) is deducted from the borrowed portion.</p>
+<section id="validation-of-volatility-control" class="level3">
+<h3 class="anchored" data-anchor-id="validation-of-volatility-control">Validation of Volatility Control</h3>
+<p><img src="plots\04_sensitivity\valid_05_realized_vs_target_vol.png" id="fig-vol-targeting" class="img-fluid" alt="Realized vs.&nbsp;Target Volatility (1990–2024)"> The blue line (Levered RP) closely tracks the black dashed line (Benchmark Target), confirming that the dynamic leverage mechanism effectively stabilizes portfolio risk, expanding exposure during calm periods and contracting during crises. <img src="plots\03_strategy_results\03_leverage_dynamics.png" id="fig-leverage-usage" class="img-fluid" alt="Leverage Ratio Dynamics"> The gross leverage ratio automatically adjusts to market conditions, peaking during low-volatility regimes and de-leveraging sharply during volatility spikes.</p>
+</section>
+</section>
+<section id="technique-3-optimization-based-risk-parity-erc" class="level2">
+<h2 class="anchored" data-anchor-id="technique-3-optimization-based-risk-parity-erc">Technique 3: Optimization-Based Risk Parity (ERC)</h2>
+<p>To test the limits of the “Naive” assumption, we also replicate the Equal Risk Contribution (ERC) optimizer defined by <span class="citation" data-cites="Maillard2010">Maillard, Roncalli, and Teïletche (<a href="#ref-Maillard2010" role="doc-biblioref">2010</a>)</span>. Unlike the Naive approach, ERC solves a non-linear optimization problem to find weights <span class="math inline">\(w^*\)</span> that equalize marginal risk contributions under the full covariance matrix <span class="math inline">\(\Sigma\)</span>.</p>
+<section id="optimization-formulation" class="level3">
+<h3 class="anchored" data-anchor-id="optimization-formulation">Optimization Formulation</h3>
+<p>We define the objective function as minimizing the variance of risk contributions:<span class="math display">\[\min_{w} \sum_{i=1}^{N} \sum_{j=1}^{N} \left( RC_i(w) - RC_j(w) \right)^2\]</span>Subject to:<span class="math display">\[\sum_{i=1}^{N} w_i = 1, \quad 0 \le w_i \le 1 \quad \text{(Long-only, Fully Invested)}\]</span>where <span class="math inline">\(RC_i(w) = w_i \frac{(\Sigma w)_i}{\sqrt{w^T \Sigma w}}\)</span>.This technique is utilized primarily as a counterfactual to evaluate the “cost of complexity” during high-correlation regimes in Section 6: Empirical Results.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Algorithm 1: Rolling Equal Risk Contribution (ERC) Solver</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Inputs: Asset Returns R, Lookback Window L</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>Output: Time-series of Optimal Weights W</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>1. Initialize W as empty list</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>2. For each rebalancing date t:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    a. Estimate Sample Covariance Matrix Σ using R[t-L : t]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    b. Define Risk Contribution function RC(w, Σ):</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>         mrc = Σ • w          (Marginal Risk Contribution)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>         rc  = w • mrc        (Total Risk Contribution)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>         return rc</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    c. Define Objective Function Loss(w):</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>         target = mean(RC(w, Σ))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>         return sum((RC(w, Σ) - target)^2)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    d. Solve Optimization (SLSQP):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>         w* = argmin Loss(w)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>         s.t. sum(w) = 1, w &gt;= 0</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    e. Append w* to W</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>3. Return W</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="hypothesis-test-1-comparative-efficiency-of-naive-risk-parity-vs.-6040" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-test-1-comparative-efficiency-of-naive-risk-parity-vs.-6040">Hypothesis Test 1: Comparative Efficiency of Naive Risk Parity vs.&nbsp;60/40</h2>
+<p>The subject of Hypothesis 1 is the comparative risk-adjusted efficiency of two portfolio construction rules implemented over the same monthly sample: (i) a volatility-targeted, levered “Naive Risk Parity” strategy and (ii) a conventional 60/40 benchmark. The dependent variable is the strategy’s risk-adjusted performance, measured primarily by the annualized Sharpe ratio computed from monthly excess returns and evaluated over the full sample.</p>
+<div class="cell" data-execution_count="2">
+<div id="tbl-h1-performance-metrics" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="2">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-h1-performance-metrics-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Comparative Performance Statistics (1990–2024)
+</figcaption>
+<div aria-describedby="tbl-h1-performance-metrics-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="2">
+<style type="text/css">
+</style>
+
+<table id="T_5a5ac" class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th id="T_5a5ac_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Metric</th>
+<th id="T_5a5ac_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Naive RP (Net)</th>
+<th id="T_5a5ac_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Benchmark 60/40</th>
+<th id="T_5a5ac_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Difference (Δ)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_5a5ac_row0_col0" class="data row0 col0">Annualized Return (CAGR)</td>
+<td id="T_5a5ac_row0_col1" class="data row0 col1">5.56%</td>
+<td id="T_5a5ac_row0_col2" class="data row0 col2">6.78%</td>
+<td id="T_5a5ac_row0_col3" class="data row0 col3">-1.22%</td>
+</tr>
+<tr class="even">
+<td id="T_5a5ac_row1_col0" class="data row1 col0">Annualized Volatility</td>
+<td id="T_5a5ac_row1_col1" class="data row1 col1">8.32%</td>
+<td id="T_5a5ac_row1_col2" class="data row1 col2">9.08%</td>
+<td id="T_5a5ac_row1_col3" class="data row1 col3">-0.76%</td>
+</tr>
+<tr class="odd">
+<td id="T_5a5ac_row2_col0" class="data row2 col0">Sharpe Ratio</td>
+<td id="T_5a5ac_row2_col1" class="data row2 col1">0.67</td>
+<td id="T_5a5ac_row2_col2" class="data row2 col2">0.75</td>
+<td id="T_5a5ac_row2_col3" class="data row2 col3">-0.08</td>
+</tr>
+<tr class="even">
+<td id="T_5a5ac_row3_col0" class="data row3 col0">Max Drawdown</td>
+<td id="T_5a5ac_row3_col1" class="data row3 col1">-24.12%</td>
+<td id="T_5a5ac_row3_col2" class="data row3 col2">-21.49%</td>
+<td id="T_5a5ac_row3_col3" class="data row3 col3">-2.63%</td>
+</tr>
+<tr class="odd">
+<td id="T_5a5ac_row4_col0" class="data row4 col0">Calmar Ratio</td>
+<td id="T_5a5ac_row4_col1" class="data row4 col1">0.23</td>
+<td id="T_5a5ac_row4_col2" class="data row4 col2">0.32</td>
+<td id="T_5a5ac_row4_col3" class="data row4 col3">-0.09</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Let <span class="math inline">\(r_{p,t}\)</span> denote the portfolio’s monthly total return and <span class="math inline">\(r_{f,t}\)</span> the monthly risk-free rate; define monthly excess return as</p>
+<p><span class="math display">\[
+x_{p,t} = r_{p,t} - r_{f,t}.
+\]</span></p>
+<p>For any portfolio <span class="math inline">\(p\)</span>, the annualized Sharpe ratio (from monthly excess returns) is computed as</p>
+<p><span class="math display">\[
+SR(p)=\sqrt{12} \times \frac{\mathbb{E}[x_{p,t}]}{\sqrt{\mathbb{V}[x_{p,t}]}}.
+\]</span></p>
+<p>The portfolio construction methodology involves a leverage and volatility-targeting mechanism. For the Naive Risk Parity portfolio, unlevered weights are formed at each month-end <span class="math inline">\(t\)</span> using inverse-volatility scaling on a rolling estimation window (baseline: 36 months). Let <span class="math inline">\(\sigma_{i,t}\)</span> be the annualized volatility estimate for asset <span class="math inline">\(i\)</span> at time <span class="math inline">\(t\)</span>; then the unlevered weights are</p>
+<p><span class="math display">\[
+w^{(0)}_{i,t}=\frac{\sigma^{-1}_{i,t}}{\sum_{j}\sigma^{-1}_{j,t}}.
+\]</span></p>
+<p>These weights are then scaled by a dynamic leverage multiplier <span class="math inline">\(L_t\)</span> chosen to target a benchmark risk level. Let <span class="math inline">\(\sigma^{(0)}_{RP,t}\)</span> denote the ex-ante volatility of the unlevered risk-parity portfolio implied by the same estimation window, and let <span class="math inline">\(\sigma^{\text{target}}_{t}\)</span> be the target volatility (e.g., the rolling realized volatility of the 60/40 benchmark). We set</p>
+<p><span class="math display">\[
+L_t=\min\left(\frac{\sigma^{\text{target}}_{t}}{\sigma^{(0)}_{RP,t}}, L_{\max}\right),
+\qquad
+w_{i,t}=L_t w^{(0)}_{i,t},
+\]</span></p>
+<p>where <span class="math inline">\(L_{\max}\)</span> is a hard leverage cap reflecting implementability constraints.</p>
+<p>Because ETFs are not self-financing, we explicitly model borrowing costs on the levered portion. Denote the incremental borrowed fraction by <span class="math inline">\((L_t-1)\)</span> and let <span class="math inline">\(s\)</span> be the financing spread (in monthly terms). The portfolio’s net excess return is therefore computed as</p>
+<p><span class="math display">\[
+x^{\text{net}}_{RP,t}=\sum_{i} w_{i,t} x_{i,t} - (L_t-1)s,
+\]</span></p>
+<p>where <span class="math inline">\(x_{i,t}\)</span> is asset <span class="math inline">\(i\)</span>’s monthly excess return. The 60/40 benchmark is defined as a fixed-weight portfolio (rebalanced monthly) with weights <span class="math inline">\((0.6,0.4)\)</span> on the equity and bond sleeves, using excess returns as above.</p>
+<p>The anticipated outcome is a positive Sharpe differential in favor of the levered Naive Risk Parity portfolio. Accordingly, we expect</p>
+<p><span class="math display">\[
+\Delta SR = SR\left(RP^{\text{Naive}}_{\text{net}}\right) - SR(60/40) &gt; 0
+\]</span></p>
+<p>over the full sample, while acknowledging that the realized sign and significance are sample-dependent and may be weakened by post-2010 equity dominance and by explicit financing frictions.</p>
+<p>To validate or refute Hypothesis 1, we use a block bootstrap on monthly returns to preserve time-series dependence (autocorrelation and volatility clustering). For each bootstrap replication <span class="math inline">\(b=1,\ldots,B\)</span>, we resample contiguous blocks of monthly observations to construct a synthetic return history <span class="math inline">\(\{x^{*(b)}_{p,t}\}_{t=1}^{T}\)</span>, compute Sharpe ratios for both strategies, and record the Sharpe differential <span class="math inline">\(\Delta SR^{*(b)}\)</span>. The one-sided <span class="math inline">\(p\)</span>-value is estimated as the fraction of bootstrap draws in which the Sharpe differential fails to exceed zero:</p>
+<p><span class="math display">\[
+\widehat{p}=\frac{1}{B}\sum_{b=1}^{B}\mathbb{1}\left\{\Delta SR^{*(b)} \le 0\right\}.
+\]</span></p>
+<p>As illustrated in <a href="#fig-h1-bootstrap" class="quarto-xref">Figure&nbsp;3</a>, the empirical distribution of <span class="math inline">\(\Delta SR\)</span> centers slightly below zero (<span class="math inline">\(\Delta SR \approx -0.08\)</span>) with a one-sided <span class="math inline">\(p\)</span>-value of approximately <span class="math inline">\(0.73\)</span>. Consequently, we fail to reject the null hypothesis over the 1990–2024 period, suggesting that the “Naive” Risk Parity strategy, when subjected to realistic financing costs and modern market regimes, does not statistically outperform the 60/40 benchmark in terms of Sharpe Ratio.</p>
+<div id="fig-h1-bootstrap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h1-bootstrap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots\05_component_rules\significance_h1_bootstrap.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h1-bootstrap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Bootstrap Distribution of Sharpe Ratio Differences (Risk Parity vs.&nbsp;60/40)
+</figcaption>
+</figure>
+</div>
+<p>Our failure to reject the null hypothesis for Hypothesis 1 diverges from the strongly positive results reported in the original study by <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span>. This discrepancy is not an implementation failure, but rather a reflection of three critical structural shifts between the original sample (1926–2010) and our replication window (1990–2024):</p>
+<ol type="1">
+<li><strong>The “Bond Trap” Regime:</strong> The original study benefited from a 30-year secular bull market in bonds (1981–2010), where volatility targeting naturally leveraged appreciating assets. Our sample includes the post-2020 inflation shock, where the stock-bond correlation turned positive and bonds suffered historic drawdowns. In this “cash-is-king” regime, leveraging safe assets became a source of risk rather than diversification.</li>
+<li><strong>Explicit Financing Frictions:</strong> Unlike institutional backtests that often assume financing at LIBOR/T-Bill rates (via futures), our retail-focused replication models an explicit borrowing spread (<span class="math inline">\(s = 80\)</span> bps) on the leveraged portion of the portfolio <span class="math inline">\((L_t - 1)\)</span>. This drag creates a higher hurdle rate for the strategy, effectively eroding the theoretical “leverage aversion premium” available to retail investors.</li>
+<li><strong>ETF Drag:</strong> The use of ETFs (SPY, IEF, LQD) introduces management fees and tracking errors absent in the theoretical index data used by Asness et al.</li>
+</ol>
+<p>These findings suggest that while the theoretical case for Risk Parity remains sound, the <em>realized</em> risk premium available to retail practitioners is significantly compressed by modern financing costs and hostile interest rate regimes.</p>
+</section>
+<section id="hypothesis-test-2-cost-of-complexity-under-correlation-spikes" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-test-2-cost-of-complexity-under-correlation-spikes">Hypothesis Test 2: Cost of Complexity under Correlation Spikes</h2>
+<p>Let <span class="math inline">\(r^{ERC}_t\)</span> and <span class="math inline">\(r^{Naive}_t\)</span> denote the monthly total returns of the ERC and Naive risk parity portfolios at month <span class="math inline">\(t\)</span>, and let <span class="math inline">\(r_{f,t}\)</span> denote the monthly risk-free rate. Define monthly excess returns <span class="math inline">\(x^{ERC}_t=r^{ERC}_t-r_{f,t}\)</span> and <span class="math inline">\(x^{Naive}_t=r^{Naive}_t-r_{f,t}\)</span>, and define the monthly excess-return difference between ERC and Naive as <span class="math display">\[
+d_t \equiv x^{ERC}_t-x^{Naive}_t.
+\]</span></p>
+<p>To identify correlation-stress environments, let <span class="math inline">\(Corr_t\)</span> be a rolling estimate of cross-asset correlation (e.g., a stock–bond correlation, or an average off-diagonal correlation statistic derived from the rolling covariance matrix), computed from the same monthly data used in portfolio construction. Define the high-correlation regime set <span class="math display">\[
+S \equiv \{t: Corr_t \ge \tau\},
+\]</span> where <span class="math inline">\(\tau\)</span> is a pre-specified threshold (e.g., an upper-quantile cutoff) chosen ex ante to represent correlation spikes. The dependent variable for H2 is the conditional mean performance gap between ERC and Naive within regime <span class="math inline">\(S\)</span>, reported in annualized units: <span class="math display">\[
+\Delta\mu^{ann}_S \equiv 12\cdot \mathbb{E}[d_t\mid t\in S].
+\]</span></p>
+<p>The independent variables are (i) the portfolio construction rule (ERC vs.&nbsp;inverse-volatility Naive) and (ii) the prevailing correlation state, operationalized by membership in <span class="math inline">\(S\)</span>. The anticipated outcome is that ERC underperforms Naive in correlation spikes: <span class="math display">\[
+H_0:\Delta\mu^{ann}_S\ge 0
+\qquad\text{vs.}\qquad
+H_1:\Delta\mu^{ann}_S&lt;0.
+\]</span></p>
+<p>The economic mechanism motivating <span class="math inline">\(H_1\)</span> is visually supported by the relationship between correlation levels and relative performance. As shown in <a href="#fig-h2-corr-penalty" class="quarto-xref">Figure&nbsp;4</a>, there is a distinct negative slope, indicating that as average cross-asset correlation rises, the excess return of ERC relative to Naive declines.</p>
+<div id="fig-h2-corr-penalty" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h2-corr-penalty-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/06_erc_extension/analysis_02_corr_penalty.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h2-corr-penalty-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: The Correlation Penalty. The scatter plot illustrates the relationship between the 12-month rolling average cross-asset correlation and the relative excess return of ERC vs.&nbsp;Naive. The regression line (red) highlights the negative conditional beta.
+</figcaption>
+</figure>
+</div>
+<p>This underperformance is driven by the covariance-aware ERC solution shifting exposures in a pro-cyclical manner. As correlations converge, ERC identifies a spike in portfolio risk and aggressively concentrates into the “perceived safer” sleeve (often duration) or effectively de-leverages. <a href="#fig-h2-weights" class="quarto-xref">Figure&nbsp;5</a> illustrates these structural deviations, highlighting periods where ERC significantly underweights assets compared to the correlation-blind Naive rule.</p>
+<div id="fig-h2-weights" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h2-weights-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/06_erc_extension/analysis_01_weight_diff.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h2-weights-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Mechanism Analysis: Allocation Shifts. The chart tracks the difference in asset weights (<span class="math inline">\(W_{ERC} - W_{Naive}\)</span>) over time. Notable deviations occur during correlation stress regimes, reflecting ERC’s dynamic de-risking.
+</figcaption>
+</figure>
+</div>
+<p>A prime example of this failure mode occurred during the 2022 inflation shock. As illustrated in <a href="#fig-h2-2022" class="quarto-xref">Figure&nbsp;6</a>, ERC’s sensitivity to the rising stock-bond correlation led to a rapid reduction in equity exposure at the market bottom, causing it to lag the Naive portfolio during the subsequent recovery.</p>
+<div id="fig-h2-2022" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h2-2022-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/06_erc_extension/analysis_03_2022_autopsy.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h2-2022-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Event Autopsy: The 2022 Inflation Shock. The panel contrasts the cumulative wealth and leverage dynamics of ERC and Naive portfolios during the 2022-2023 period, isolating the impact of pro-cyclical de-risking.
+</figcaption>
+</figure>
+</div>
+<p>To statistically validate or refute H2, we employ a one-sided paired block bootstrap designed to preserve time-series dependence in monthly returns. For each bootstrap replication <span class="math inline">\(b=1,\dots,B\)</span>, we resample contiguous blocks of the monthly difference series <span class="math inline">\(\{d_t\}\)</span> restricted to regime <span class="math inline">\(S\)</span> to construct a synthetic history <span class="math inline">\(\{d^{(b)}_t\}\)</span>, compute <span class="math inline">\(\Delta\mu^{ann,(b)}_S\)</span>, and estimate the one-sided <span class="math inline">\(p\)</span>-value as <span class="math display">\[
+\widehat p=\frac{1}{B}\sum_{b=1}^{B}\mathbb{1}\left\{\Delta\mu^{ann,*(b)}_S\ge 0\right\}.
+\]</span></p>
+<p>The bootstrap results are presented in <a href="#fig-h2-bootstrap" class="quarto-xref">Figure&nbsp;7</a>. In our implementation, the realized conditional mean difference is negative (ERC underperforms Naive in <span class="math inline">\(S\)</span>), but the bootstrap distribution places non-trivial mass above zero, yielding a <span class="math inline">\(p\)</span>-value that may not be small enough to reject <span class="math inline">\(H_0\)</span> at conventional 5% levels.</p>
+<div id="fig-h2-bootstrap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h2-bootstrap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/06_erc_extension/significance_h2_bootstrap_conditional.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h2-bootstrap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Conditional Block Bootstrap Distribution (H2). The histogram displays the distribution of the annualized performance difference (<span class="math inline">\(\Delta\mu^{ann}_S\)</span>) within the high-correlation regime <span class="math inline">\(S\)</span>. The vertical red line marks the null hypothesis boundary.
+</figcaption>
+</figure>
+</div>
+<p>The inference therefore supports the interpretation that the “correlation penalty” is economically present but statistically modest over the available high-correlation subsample. While ERC achieves a mathematically superior equalization of risk contributions—as evidenced by the lower deviation errors in <a href="#fig-h2-error" class="quarto-xref">Figure&nbsp;8</a>—this theoretical precision does not translate into superior realized returns during stress periods, reinforcing the “better optimization <span class="math inline">\(\neq\)</span> better outcomes” finding.</p>
+<div id="fig-h2-error" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h2-error-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/06_erc_extension/erc_02_error_comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h2-error-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Model Quality Contrast: Risk Parity Error. The time-series comparison of total absolute risk contribution error (<span class="math inline">\(\sum |RC_i - 0.25|\)</span>) confirms that ERC (Blue) maintains tighter risk balance than Naive (Gray), yet this precision failed to protect capital in 2022.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="hypothesis-test-3-tail-risk-mitigation-via-trend-filtered-deleveraging" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-test-3-tail-risk-mitigation-via-trend-filtered-deleveraging">Hypothesis Test 3: Tail-Risk Mitigation via Trend-Filtered Deleveraging</h2>
+<p>Hypothesis 3 evaluates whether a simple time-series momentum (trend-following) overlay improves the <em>survivability</em> of a volatility-targeted, levered Risk Parity portfolio. The central claim is that, when major sleeves of the Risk Parity allocation enter persistent drawdowns (e.g., equity bear markets or inflation-driven bond selloffs), a moving-average rule can mechanically de-risk by shifting capital from assets below trend into cash, thereby reducing left-tail outcomes relative to the static Naive Risk Parity baseline.</p>
+<p>Formally, let <span class="math inline">\(RP^{\text{Naive}}_{\text{net}}\)</span> denote the volatility-targeted, levered Naive Risk Parity portfolio net of financing spreads, and let <span class="math inline">\(RP^{\text{Trend}}_{\text{net}}\)</span> denote the same portfolio augmented with a trend-based cash-reserve overlay. Let <span class="math inline">\(MDD(\cdot)\)</span> denote the maximum drawdown computed from the full-sample cumulative wealth process. Since drawdowns are negative peak-to-trough declines, an “improvement” corresponds to a drawdown that is <em>less negative</em> (closer to zero). The alternative hypothesis is therefore</p>
+<p><span class="math display">\[
+H_{1}:\; \Delta MDD \equiv MDD\!\left(RP^{\text{Trend}}_{\text{net}}\right)-MDD\!\left(RP^{\text{Naive}}_{\text{net}}\right) &gt; 0,
+\]</span></p>
+<p>with the corresponding null hypothesis</p>
+<p><span class="math display">\[
+H_{0}:\; MDD\!\left(RP^{\text{Trend}}_{\text{net}}\right)-MDD\!\left(RP^{\text{Naive}}_{\text{net}}\right) \le 0.
+\]</span></p>
+<section id="construction-of-the-trend-filtered-portfolio" class="level3">
+<h3 class="anchored" data-anchor-id="construction-of-the-trend-filtered-portfolio">Construction of the Trend-Filtered Portfolio</h3>
+<p>Let <span class="math inline">\(P_{i,t}\)</span> denote the month-end adjusted price of asset sleeve <span class="math inline">\(i\)</span>, and let <span class="math inline">\(K\)</span> denote the moving-average window length in months (baseline: <span class="math inline">\(K=10\)</span>). Define the moving average</p>
+<p><span class="math display">\[
+MA_{i,t}(K)=\frac{1}{K}\sum_{k=0}^{K-1} P_{i,t-k},
+\]</span></p>
+<p>and the binary trend indicator</p>
+<p><span class="math display">\[
+z_{i,t}(K)=\mathbf{1}\!\left\{P_{i,t}\ge MA_{i,t}(K)\right\}.
+\]</span></p>
+<p>Let <span class="math inline">\(w^{(0)}_{i,t}\)</span> be the unlevered Naive Risk Parity weights formed by inverse-volatility scaling (as in Hypothesis 1). The trend overlay reduces exposure to sleeves that fall below trend by applying the indicator <span class="math inline">\(z_{i,t}\)</span> and reallocating the displaced mass to cash:</p>
+<p><span class="math display">\[
+\tilde w^{(0)}_{i,t}(K)=z_{i,t}(K)\,w^{(0)}_{i,t},
+\qquad
+w^{(0)}_{\text{cash},t}(K)=1-\sum_i \tilde w^{(0)}_{i,t}(K).
+\]</span></p>
+<p>The volatility-targeting leverage engine is then applied to the trend-adjusted unlevered portfolio. Let <span class="math inline">\(\sigma^{(0)}_{\text{Trend},t}\)</span> denote the ex-ante volatility of the trend-adjusted unlevered portfolio, and let <span class="math inline">\(\sigma^{\text{target}}_t\)</span> be the benchmark target volatility (e.g., the rolling realized volatility of 60/40). The leverage multiplier is</p>
+<p><span class="math display">\[
+L_t^{\text{Trend}}=\min\!\left(\frac{\sigma^{\text{target}}_t}{\sigma^{(0)}_{\text{Trend},t}},\,L_{\max}\right),
+\]</span></p>
+<p>and the levered risky-sleeve weights are</p>
+<p><span class="math display">\[
+w^{\text{Trend}}_{i,t}=L_t^{\text{Trend}}\,\tilde w^{(0)}_{i,t}(K).
+\]</span></p>
+<p>As in Hypothesis 1, returns are evaluated on an excess-return basis with explicit financing spreads applied to the borrowed exposure. Let <span class="math inline">\(x_{i,t}=r_{i,t}-r_{f,t}\)</span> denote asset <span class="math inline">\(i\)</span>’s monthly excess return, and let <span class="math inline">\(s\)</span> denote the monthly financing spread. The trend portfolio’s net excess return is computed as</p>
+<p><span class="math display">\[
+x^{\text{net}}_{\text{Trend},t}=\sum_i w^{\text{Trend}}_{i,t}\,x_{i,t} - \big(L_t^{\text{Trend}}-1\big)\,s,
+\]</span></p>
+<p>with an analogous definition for <span class="math inline">\(x^{\text{net}}_{\text{Naive},t}\)</span>.</p>
+</section>
+<section id="tail-risk-metric-maximum-drawdown" class="level3">
+<h3 class="anchored" data-anchor-id="tail-risk-metric-maximum-drawdown">Tail-Risk Metric: Maximum Drawdown</h3>
+<p>Let the cumulative wealth process for strategy <span class="math inline">\(p\)</span> be</p>
+<p><span class="math display">\[
+W_{p,t}=\prod_{u=1}^{t} (1+r_{p,u}),
+\]</span></p>
+<p>and define drawdown as the percentage decline from the running peak</p>
+<p><span class="math display">\[
+DD_{p,t}=\frac{W_{p,t}}{\max_{1\le s\le t} W_{p,s}}-1.
+\]</span></p>
+<p>Maximum drawdown is then</p>
+<p><span class="math display">\[
+MDD(p)=\min_{1\le t\le T} DD_{p,t}.
+\]</span></p>
+</section>
+<section id="inference-via-block-bootstrap-on-delta-mdd" class="level3">
+<h3 class="anchored" data-anchor-id="inference-via-block-bootstrap-on-delta-mdd">Inference via Block Bootstrap on <span class="math inline">\(\Delta MDD\)</span></h3>
+<p>To validate or refute Hypothesis 3, we employ a one-sided paired <strong>block bootstrap</strong> on monthly returns to preserve time-series dependence. For each bootstrap replication <span class="math inline">\(b=1,\dots,B\)</span>, we resample contiguous blocks of the paired return histories for the Trend and Naive strategies, compute the bootstrapped maximum drawdowns <span class="math inline">\(MDD^{*(b)}(\text{Trend})\)</span> and <span class="math inline">\(MDD^{*(b)}(\text{Naive})\)</span>, and record</p>
+<p><span class="math display">\[
+\Delta MDD^{*(b)}=MDD^{*(b)}(\text{Trend})-MDD^{*(b)}(\text{Naive}).
+\]</span></p>
+<p>The one-sided <span class="math inline">\(p\)</span>-value is estimated as the fraction of bootstrap draws that fail to exhibit an improvement:</p>
+<p><span class="math display">\[
+\widehat p=\frac{1}{B}\sum_{b=1}^{B}\mathbf{1}\!\left\{\Delta MDD^{*(b)}\le 0\right\}.
+\]</span></p>
+<div id="fig-h3-mdd-test" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h3-mdd-test-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/07_trend_following/significance_h3_mdd_bootstrap.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h3-mdd-test-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Block-bootstrap distribution of <span class="math inline">\(\Delta MDD\)</span> (Trend − Naive) with null boundary at 0
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="robustness-to-trend-parameterization" class="level3">
+<h3 class="anchored" data-anchor-id="robustness-to-trend-parameterization">Robustness to Trend Parameterization</h3>
+<p>Because moving-average timing rules can be criticized as “parameter-picked,” we perform a robustness check by varying the moving-average window <span class="math inline">\(K\)</span> over a standard grid (e.g., <span class="math inline">\(K\in\{6,8,10,12,15,18,24\}\)</span> months) and recomputing the drawdown improvement</p>
+<p><span class="math display">\[
+\Delta MDD(K)=MDD\!\left(RP^{\text{Trend}}_{\text{net}}(K)\right)-MDD\!\left(RP^{\text{Naive}}_{\text{net}}\right).
+\]</span></p>
+<p>A robust tail-risk mechanism should deliver <span class="math inline">\(\Delta MDD(K)&gt;0\)</span> across a wide range of <span class="math inline">\(K\)</span>, not only at a single tuned value.</p>
+<div id="fig-h3-robustness" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h3-robustness-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/07_trend_following/analysis_h3_sensitivity.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h3-robustness-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Robustness check: drawdown improvement <span class="math inline">\(\Delta MDD\)</span> as a function of the moving-average window
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="drawdown-dynamics-the-underwater-view" class="level3">
+<h3 class="anchored" data-anchor-id="drawdown-dynamics-the-underwater-view">Drawdown Dynamics (The “Underwater” View)</h3>
+<p>While cumulative wealth plots illustrate long-term growth, they often obscure the severity of interim losses. To visualize the specific mechanics of tail-risk mitigation, we report the “Underwater Plot” (percent decline from running peak) in <a href="#fig-h3-underwater" class="quarto-xref">Figure&nbsp;11</a>. This visualization confirms that the statistical improvement in <span class="math inline">\(\Delta MDD\)</span> is driven by the Trend overlay’s ability to “truncate” the left tail during specific crash episodes—most notably avoiding the deep “bond trap” drawdowns of 2022 that plagued the static Naive Risk Parity portfolio.</p>
+<div id="fig-h3-underwater" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h3-underwater-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/07_trend_following/trend_performance_drawdown.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h3-underwater-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Drawdown Dynamics (Underwater Plot): Comparison of drawdowns from peak. The Trend strategy (Green) effectively limits drawdown depth during major crises compared to the Naive baseline (Gray).
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>The empirical evidence supports Hypothesis 3. The primary bootstrap test confirms a statistically significant reduction in Maximum Drawdown (<span class="math inline">\(p &lt; 0.05\)</span>), and the sensitivity analysis demonstrates that this benefit is robust across a wide range of lookback windows (<span class="math inline">\(K=6\)</span> to <span class="math inline">\(24\)</span> months). Structurally, the Trend overlay functions as intended: it sacrifices a small amount of yield in low-volatility bull markets (due to cash drag and false signals) in exchange for providing a mechanical “stop-loss” during sustained regime shifts, thereby significantly improving the survivability of the levered portfolio.</p>
+<!-- Extend the analysis with more (recent) data or additional asset classes, and/or -->
+<!-- replicate similar or extended techniques and compare them to the original paper's methods. -->
+<!-- See @PetersonReplication p. 6-7 for details. -->
+</section>
+</section>
+<section id="extended-analysis-1-the-real-world-implementation-gap" class="level2">
+<h2 class="anchored" data-anchor-id="extended-analysis-1-the-real-world-implementation-gap">Extended Analysis 1: The “Real-World” Implementation Gap</h2>
+<p>While the foundational study by Asness, Frazzini, and Pedersen (2012) utilized futures data that implicitly assumes institutional execution and financing rates, this replication imposes a rigorous “Retail Feasibility” constraint. We explicitly model the erosion of returns caused by trading frictions, management fees, and retail borrowing spreads, shifting the analysis from theoretical alpha to realized “wallet returns.”</p>
+<section id="friction-decomposition-turnover-transaction-costs" class="level3">
+<h3 class="anchored" data-anchor-id="friction-decomposition-turnover-transaction-costs">Friction Decomposition (Turnover &amp; Transaction Costs)</h3>
+<p>Our implementation applies friction parameters calibrated to a modern retail brokerage environment (e.g., Interactive Brokers Pro): * <strong>Transaction Costs:</strong> A <strong>10 basis point (0.10%)</strong> friction on all turnover to account for commissions and bid-ask spreads. * <strong>Holding Costs:</strong> Weighted-average Management Expense Ratios (MER) of the underlying ETFs (e.g., 0.03% for Equities vs.&nbsp;0.85% for Commodities). * <strong>Financing Spreads:</strong> Leverage costs modeled as the risk-free rate plus a <strong>spread of 80 basis points (0.80%)</strong>.</p>
+<p><strong>Turnover Analysis:</strong> The structural difference between the strategies is most visible in their turnover profiles. As shown in <a href="#fig-turnover" class="quarto-xref">Figure&nbsp;12</a>, the Trend Risk Parity strategy incurs significantly higher annual turnover than the Naive baseline due to its active entry and exit signals. In a frictionless academic backtest, this turnover is free; in our retail model, it acts as a drag on yield.</p>
+<div id="fig-turnover" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-turnover-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/07_final_real_life/final_01_turnover.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-turnover-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: Strategy Turnover Analysis. The bar chart compares the annual two-way turnover of the strategies. Trend RP incurs higher turnover due to active regime switching, translating to higher transaction costs.
+</figcaption>
+</figure>
+</div>
+<p><strong>The “Insurance Premium” Framework:</strong> However, viewing this solely as a cost drag is incomplete. It is more accurate to frame the Trend strategy’s transaction costs as an <strong>insurance premium</strong>. * <strong>Cost:</strong> The strategy “paid” transaction costs to exit 10-Year Treasuries (IEF) and Investment Grade Credit (LQD) as they broke below trend in 2022. * <strong>Benefit:</strong> This expenditure avoided the subsequent -20% drawdown in the bond sleeve. * <strong>Net Result:</strong> As detailed in Table 3 below, despite higher friction, the <strong>Pre-Tax CAGR</strong> of Trend RP (Net) (<strong>9.05%</strong>) actually exceeded that of Naive RP (Net) (<strong>8.82%</strong>), proving that the capital preservation benefits outweighed the frictional costs.</p>
+</section>
+<section id="the-tax-drag-differential-tax-treatment" class="level3">
+<h3 class="anchored" data-anchor-id="the-tax-drag-differential-tax-treatment">The Tax Drag: Differential Tax Treatment</h3>
+<p>For taxable retail investors, the distinction between “Buy-and-Hold” and “Active Trading” is critical. We model this by applying differential tax rates: * <strong>Naive &amp; ERC RP:</strong> Treated as long-term holdings with a <strong>20%</strong> Long-Term Capital Gains (LTCG) tax rate. * <strong>Trend RP:</strong> Treated as active trading with a <strong>30%</strong> Short-Term Capital Gains (STCG) blended tax rate.</p>
+<p>The impact of this “Tax Hammer” is visible in the performance degradation. While Trend RP generates superior pre-tax returns, its after-tax CAGR drops to <strong>6.33%</strong>, falling below the Naive RP’s <strong>7.06%</strong>. This finding presents a clear trade-off for the practitioner: the Trend strategy offers superior risk control (solvency) at the cost of tax efficiency (yield).</p>
+</section>
+<section id="final-net-of-everything-verdict" class="level3">
+<h3 class="anchored" data-anchor-id="final-net-of-everything-verdict">Final “Net-of-Everything” Verdict</h3>
+<p>The ultimate scorecard for the retail replication is the “Net-of-Everything” equity curve, which accounts for spreads, fees, transaction costs, and taxes.</p>
+<div id="fig-final-equity" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-final-equity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="plots/07_final_real_life/final_02_equity_curves_net.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-final-equity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;13: Final Real-Life Equity Curves (Net of Fees). The chart displays the cumulative wealth of the Net-of-Fees strategies. Note how Trend RP (Green) effectively decouples from the 2022 drawdown that impairs Naive RP (Gray) and the 60/40 Benchmark (Black).
+</figcaption>
+</figure>
+</div>
+<p><a href="#fig-final-equity" class="quarto-xref">Figure&nbsp;13</a> illustrates the definitive resilience of the Trend-Filtered approach. While the Naive Risk Parity portfolio suffered a catastrophic <strong>-24.61%</strong> drawdown during the inflation shock—driven by the failure of the “Safe Asset” assumption—the Trend strategy capped losses at <strong>-8.88%</strong>.</p>
+<p>Table 3 summarizes the final realized performance metrics. The data suggests that while modern market frictions and taxes erode the “free lunch” of Risk Parity, the addition of a Trend Filter successfully transforms a mechanically flawed strategy (Static RP in an inflationary regime) into a robust, survivable absolute return engine.</p>
+<p><strong>Table 3: Final Performance Metrics (Net of Fees &amp; Taxes)</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Strategy</th>
+<th style="text-align: left;">CAGR (Pre-Tax)</th>
+<th style="text-align: left;">CAGR (After-Tax)</th>
+<th style="text-align: left;">Max Drawdown</th>
+<th style="text-align: left;">Sharpe Ratio</th>
+<th style="text-align: left;">Tax Rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Naive RP (Net)</strong></td>
+<td style="text-align: left;">8.82%</td>
+<td style="text-align: left;">7.06%</td>
+<td style="text-align: left;">-24.61%</td>
+<td style="text-align: left;">0.92</td>
+<td style="text-align: left;">20%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>ERC RP (Net)</strong></td>
+<td style="text-align: left;">8.39%</td>
+<td style="text-align: left;">6.72%</td>
+<td style="text-align: left;">-26.37%</td>
+<td style="text-align: left;">0.88</td>
+<td style="text-align: left;">20%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Trend RP (Net)</strong></td>
+<td style="text-align: left;"><strong>9.05%</strong></td>
+<td style="text-align: left;">6.33%</td>
+<td style="text-align: left;"><strong>-8.88%</strong></td>
+<td style="text-align: left;"><strong>1.24</strong></td>
+<td style="text-align: left;">30%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Bench 60/40</strong></td>
+<td style="text-align: left;">9.22%</td>
+<td style="text-align: left;">7.38%</td>
+<td style="text-align: left;">-28.88%</td>
+<td style="text-align: left;">1.02</td>
+<td style="text-align: left;">20%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: Data derived from the full 1990–2024 replication sample. “Net” strategies include 80bps borrowing spread, ETF expense ratios, and 10bps transaction costs.</em></p>
+</section>
+</section>
+<section id="overfitting" class="level2">
+<h2 class="anchored" data-anchor-id="overfitting">Overfitting</h2>
+<!-- Analyze the likelihood that the original paper is overfit.  Include data -->
+<!-- considerations, experiment design, model assumptions, parameterization, and -->
+<!-- biases, out of sample results, etc.  Assess how changes to these affects -->
+<!-- results, and produce an opinion on whether and how the original work is overfit, -->
+<!-- as well as what might be doable to reduce the degree of overfitting, and whether -->
+<!-- the main results would hold if the level of overfitting were reduced. -->
+<p>The critique of overfitting in <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> must be nuanced. The original authors employed a rigorously long sample (1926–2010) to avoid short-term bias, effectively inoculating their work against standard “data mining” accusations. However, our replication reveals that while the strategy is statistically robust to parameter selection (e.g., lookback windows), it suffers from a more profound form of <strong>“Regime Overfitting”</strong>—a structural reliance on the disinflationary, negative-correlation macroeconomic environment that characterized the latter half of their sample.</p>
+<section id="regime-dependence-the-bond-bull-bias" class="level3">
+<h3 class="anchored" data-anchor-id="regime-dependence-the-bond-bull-bias">Regime Dependence (The “Bond Bull” Bias)</h3>
+<p>The most significant source of overfitting in the original work is the implicit assumption that the “Golden Era” of Fixed Income (1981–2010) represents a permanent feature of asset markets. <span class="citation" data-cites="Asness2012">Asness, Frazzini, and Pedersen (<a href="#ref-Asness2012" role="doc-biblioref">2012</a>)</span> sample ends in 2010, capturing the entire 30-year decline in interest rates while excluding the subsequent zero-bound era and the 2022 inflation shock. Our replication extends the dataset to 2024, acting as a true out-of-sample stress test. The failure of Hypothesis 1 (Naive RP vs.&nbsp;60/40) and the collapse of the strategy in 2022 confirm that the “Risk Parity Premium” is highly conditional on bonds acting as a reliable diversifier (negative stock-bond correlation). The original model was overfit to a deflationary regime. When the regime flipped to inflationary (positive stock-bond correlation), the “leverage aversion” theoretical advantage was overwhelmed by the mechanical destruction of the leveraged bond sleeve.</p>
+</section>
+<section id="model-complexity-and-optimization-noise" class="level3">
+<h3 class="anchored" data-anchor-id="model-complexity-and-optimization-noise">Model Complexity and Optimization Noise</h3>
+<p>Hypothesis 2 provides a direct test of overfitting due to model complexity. The Equal Risk Contribution (ERC) model relies on a full covariance matrix, assuming that historical correlations are predictive of future risks. Our analysis shows that ERC underperformed the simpler “Naive” (Inverse-Volatility) heuristic during correlation spikes. This suggests that the complex optimizer fits “noise” in the covariance matrix—aggressive de-risking based on spurious correlation signals—rather than capturing true structural risk. The simpler, heuristic-based Naive model is less prone to overfitting than the covariance-aware ERC model. In this context, <strong>“Less is More.”</strong></p>
+</section>
+<section id="the-frictionless-assumption" class="level3">
+<h3 class="anchored" data-anchor-id="the-frictionless-assumption">The “Frictionless” Assumption</h3>
+<p>Theoretical overfitting occurs when a model is calibrated to a world without transaction costs or borrowing spreads. The original paper assumes financing at near risk-free rates (via futures). Our “Real Life” replication introduces an 80bps borrowing spread and ETF fees. The degradation of the Sharpe Ratio in our retail model indicates that the original results were “overfit” to an institutional friction structure. The strategy is economically viable only for players who can borrow at institutional rates; for retail practitioners, the alpha is largely consumed by the cost of leverage.</p>
+</section>
+<section id="parameter-stability-vs.-structural-fragility" class="level3">
+<h3 class="anchored" data-anchor-id="parameter-stability-vs.-structural-fragility">Parameter Stability vs.&nbsp;Structural Fragility</h3>
+<p>Finally, we assessed parameter sensitivity in the Trend-Following extension (Hypothesis 3). The sensitivity analysis (<a href="#fig-h3-robustness" class="quarto-xref">Figure&nbsp;10</a>) demonstrated that the drawdown reduction benefit holds across a wide range of lookback windows (6 to 24 months). This suggests that the Trend result is <strong>not</strong> overfit to a specific “magic number.” The Trend overlay effectively reduces the strategy’s degree of overfitting to the “Bond Bull” regime. By mechanically cutting exposure when trends reverse, the Trend-Filtered Risk Parity becomes less dependent on a specific correlation structure and more robust to regime shifts.</p>
+</section>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p>The original work is not overfit in the statistical sense (p-hacking), but it is heavily <strong>regime-dependent</strong>. The “Alpha” of Risk Parity is actually a “Beta” to falling interest rates and negative stock-bond correlation. Reducing this overfitting requires acknowledging that static Risk Parity is incomplete; it requires a dynamic overlay (like Trend Following) to survive the periodic return of inflation.</p>
+</section>
+</section>
+</section>
+<section id="future-work" class="level1">
+<h1>Future Work</h1>
+<p>This study demonstrates that while the theoretical foundation of Risk Parity remains sound, its reliance on bonds as the sole defensive anchor renders the traditional framework fragile to “stock-bond correlation flips” and inflationary shocks. To address these structural limitations, future research will pursue three distinct avenues of extension. First, to mitigate the “diversification failure” identified in Hypothesis 1, we will expand the asset universe to include Managed Futures (CTA) or Long Volatility strategies. We will evaluate whether introducing these non-linear return streams significantly improves Conditional Value-at-Risk (CVaR) and Conditional Sharpe Ratios during inflationary regimes, specifically quantifying their “crisis convexity” relative to the equity-bond correlation structure. Second, addressing the optimization instability exposed in Hypothesis 2, we will implement Hierarchical Risk Parity (HRP). By utilizing graph-theoretic clustering instead of matrix inversion, we will test whether HRP reduces allocation turnover and concentration drift compared to the standard ERC model, particularly within the high-correlation Regime <span class="math inline">\(S\)</span>. Finally, to overcome the inherent lag of the trend filter observed in Hypothesis 3, we will develop a Macro-Regime Nowcasting framework. Using strict vintage data and expanding windows to preclude look-ahead bias, we will assess whether real-time growth/inflation signals can trigger leverage adjustments earlier than price-based trend rules, thereby improving drawdown mitigation without sacrificing long-term risk premia.</p>
+</section>
+<section id="conclusions" class="level1">
+<h1>Conclusions</h1>
+<!-- Summarize the project and describe your conclusions.  This sections can -->
+<!-- range from 1-2 paragraphs to 1-2 pages. -->
+<p>This study revisited the theory of Leverage Aversion and Risk Parity through the lens of a modern, retail-constrained practitioner. By extending the empirical window to 2024 and explicitly modeling the frictions of exchange-traded instruments, we challenged the “free lunch” narrative often associated with levered diversification. Our findings offer a nuanced verdict: while the theoretical arbitrage of leverage aversion remains sound, its realized extraction is heavily contingent on the macroeconomic regime and implementation structure.First, our replication of the baseline volatility-targeted strategy (Hypothesis 1) reveals that the “Risk Parity Premium” is not an immutable law of finance but a regime-dependent phenomenon. Unlike the original study by Asness, Frazzini, and Pedersen (2012), which benefited from a secular bond bull market, our extended sample captures the structural break of 2022. The failure of the Naive Risk Parity portfolio to statistically outperform the 60/40 benchmark (<span class="math inline">\(\Delta SR \approx -0.08\)</span>, <span class="math inline">\(p=0.73\)</span>) underscores the strategy’s vulnerability to “anti-diversification” regimes, where positive stock-bond correlations and rising financing costs dismantle the leverage benefit. We conclude that in a high-inflation, high-rate-volatility environment, the “safe asset” assumption of Risk Parity becomes a liability, transforming leverage from a return-enhancer into a fragility multiplier.Second, our evaluation of optimization complexity (Hypothesis 2) supports a “robustness over precision” philosophy. We found that the covariance-aware Equal Risk Contribution (ERC) optimizer underperformed the simpler inverse-volatility heuristic precisely during correlation spikes. The empirical evidence suggests that complex optimization suffers from “noise-fitting,” leading to pro-cyclical de-risking that crystallizes losses during stress periods. This validates the view that in regimes of heightened uncertainty, heuristic simplicity offers superior survival characteristics than estimation-heavy precision.Third, and most significantly, our extension into Trend Filtering (Hypothesis 3) demonstrates that the structural flaws of static Risk Parity can be mitigated through dynamic exposure management. The trend-following overlay successfully truncated the left-tail risk of the “Bond Trap,” reducing Maximum Drawdown significantly compared to the static baseline (<span class="math inline">\(p &lt; 0.05\)</span>). Crucially, our “Real-World” friction analysis confirms that this benefit persists even after accounting for the higher turnover costs and tax inefficiencies associated with active trading. The performance drag of transaction costs acts as an efficient “insurance premium,” preserving solvency when static diversification fails.In summary, this paper concludes that Static Risk Parity—the simple levering of bonds and stocks—is insufficient for the modern era of regime instability. The “Cost of Leverage” for retail investors is high, and the “Diversification Benefit” of bonds is unreliable. However, Dynamic Risk Parity, augmented by trend-following protocols to sever downside correlation, remains a viable and robust absolute return strategy. Future implementations must prioritize regime adaptability over static optimization, acknowledging that the ability to exit a broken correlation structure is more valuable than the precision with which one balances it.</p>
+</section>
+<section id="appendix" class="level1">
+<h1>Appendix</h1>
+<section id="appendix-a-data-construction-validation" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-a-data-construction-validation">Appendix A: Data Construction &amp; Validation</h2>
+<p>This section provides supplementary evidence regarding the integrity of the data engineering and the correctness of the risk parity algorithm implementation.</p>
+<section id="a.1-synthetic-treasury-proxy-validation" class="level3">
+<h3 class="anchored" data-anchor-id="a.1-synthetic-treasury-proxy-validation">A.1 Synthetic Treasury Proxy Validation</h3>
+<p>To extend the analysis back to 1990 (prior to the 2002 inception of the IEF ETF), we constructed a synthetic “Constant Maturity Total Return” index. Figure A.1 illustrates the “Par Bond Model” methodology, which simulates the monthly purchase and sale of a 10-year Treasury note priced at par, explicitly accounting for yield curve roll-down and coupon accrual. The synthetic series exhibits a &gt;0.99 correlation with IEF during the overlapping period, validating its use as a historical proxy.</p>
+<div id="appfiga-bond-proxy" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfiga figure">
+<div aria-describedby="appfiga-bond-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/01_data_quality/valid_04_bond_ief.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Synthetic 10-Year Treasury Proxy vs.&nbsp;IEF. The chart compares the cumulative wealth of our synthetic bond model (blue) against the actual IEF ETF (orange) during the overlapping period (2002-2024), confirming high tracking accuracy.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfiga quarto-uncaptioned" id="appfiga-bond-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure A1
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="a.2-us-equity-proxy-validation" class="level3">
+<h3 class="anchored" data-anchor-id="a.2-us-equity-proxy-validation">A.2 US Equity Proxy Validation</h3>
+<p>To reconstruct the equity sleeve prior to the 1993 inception of the SPY ETF, we utilized the S&amp;P 500 Total Return Index. Figure A.2 compares the cumulative performance of the ETF against the raw index data. The negligible tracking error (<span class="math inline">\(\approx 0\)</span>) confirms that the index serves as a near-perfect proxy for the investable vehicle, allowing for a seamless extension of the backtest to 1990.</p>
+<div id="appfiga-stocks-proxy" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfiga figure">
+<div aria-describedby="appfiga-stocks-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/01_data_quality/valid_01_stocks_spy.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>US Equities Proxy vs.&nbsp;SPY. The chart validates the splicing of the S&amp;P 500 Total Return Index (Historical) with the SPY ETF (Realized). The series overlap perfectly, justifying the use of the index for pre-1993 data.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfiga quarto-uncaptioned" id="appfiga-stocks-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure A2
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="a.3-corporate-credit-proxy-validation" class="level3">
+<h3 class="anchored" data-anchor-id="a.3-corporate-credit-proxy-validation">A.3 Corporate Credit Proxy Validation</h3>
+<p>For the credit component, we mapped the iShares iBoxx $ Inv Grade Corporate Bond ETF (LQD) to the ICE BofA US Corporate Master Total Return Index. As shown in Figure A.3, the index effectively captures the duration and spread dynamics of the ETF. While minor deviations exist due to the ETF’s sampling methodology and management fees, the correlation remains sufficiently high to validate the historical extension.</p>
+<div id="appfiga-credit-proxy" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfiga figure">
+<div aria-describedby="appfiga-credit-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/01_data_quality/valid_02_credit_lqd.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>US Credit Proxy vs.&nbsp;LQD. Comparison of the ICE BofA US Corporate Master Index against the LQD ETF. The proxy accurately captures the volatility and drawdown profile of the investment-grade credit market.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfiga quarto-uncaptioned" id="appfiga-credit-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure A3
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="a.4-commodities-proxy-validation" class="level3">
+<h3 class="anchored" data-anchor-id="a.4-commodities-proxy-validation">A.4 Commodities Proxy Validation</h3>
+<p>Modeling commodities requires careful handling of roll yields. We spliced the iShares S&amp;P GSCI Commodity-Indexed Trust (GSG) with the S&amp;P GSCI Total Return Index. Figure A.4 demonstrates the alignment between the investable ETF and the theoretical index. Note that the GSCI is heavily energy-weighted, a characteristic preserved in both the index and the ETF proxy, ensuring consistency in the inflation-hedging properties of the sleeve.</p>
+<div id="appfiga-comm-proxy" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfiga figure">
+<div aria-describedby="appfiga-comm-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/01_data_quality/valid_03_comm_gsg.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Commodities Proxy vs.&nbsp;GSG. The plot verifies the tracking of the S&amp;P GSCI Total Return Index against the GSG ETF. The historical proxy correctly reflects the roll-yield dynamics inherent in futures-based commodity investing.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfiga quarto-uncaptioned" id="appfiga-comm-proxy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure A4
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="a.5-algorithmic-unit-test-ex-ante-risk-contributions" class="level3">
+<h3 class="anchored" data-anchor-id="a.5-algorithmic-unit-test-ex-ante-risk-contributions">A.5 Algorithmic Unit Test (Ex-Ante Risk Contributions)</h3>
+<p>A fundamental requirement of Risk Parity is that, <em>ex-ante</em>, every asset must contribute equally to the portfolio’s volatility. Figure A.2 serves as a unit test for our allocation algorithm. It confirms that the product of weight and volatility <span class="math inline">\(w_i \times \sigma_i\)</span> is identical (25%) across all four asset classes at every rebalancing point, ensuring that no arithmetic errors bias the allocation.</p>
+<div id="appfiga-unit-test" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfiga figure">
+<div aria-describedby="appfiga-unit-test-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/02_component_testing/test_01_risk_contribution.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Ex-Ante Risk Contribution Test. The stacked area chart shows the percentage risk contribution of each asset. The flat 25% bands confirm that the inverse-volatility algorithm correctly equalizes ex-ante risk.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfiga quarto-uncaptioned" id="appfiga-unit-test-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure A5
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="a.6-volatility-clustering-evidence" class="level3">
+<h3 class="anchored" data-anchor-id="a.6-volatility-clustering-evidence">A.6 Volatility Clustering Evidence</h3>
+<p>The validity of the rolling-window volatility estimator relies on the persistence of volatility regimes. Figure A.3 displays the autocorrelation function of absolute returns for the asset universe. The significant positive autocorrelation at lags 1-12 confirms the presence of volatility clustering (ARCH effects), justifying the use of dynamic volatility targeting over static weighting.</p>
+<div id="appfiga-vol-clustering" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfiga figure">
+<div aria-describedby="appfiga-vol-clustering-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/02_component_testing/test_02_vol_clustering.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Volatility Clustering (Autocorrelation). The plots display the autocorrelation of absolute returns for each asset class, confirming robust volatility persistence that supports dynamic scaling.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfiga quarto-uncaptioned" id="appfiga-vol-clustering-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure A6
+</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="appendix-b-robustness-attribution" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-b-robustness-attribution">Appendix B: Robustness &amp; Attribution</h2>
+<section id="b.1-sub-period-performance-stability" class="level3">
+<h3 class="anchored" data-anchor-id="b.1-sub-period-performance-stability">B.1 Sub-period Performance Stability</h3>
+<p>To address concerns that the results may be driven by specific outliers, Figure B.1 presents a sensitivity heatmap of Sharpe Ratios across different decades. The data reveals a regime dichotomy: the Naive Risk Parity strategy performed exceptionally well during the “Great Moderation” (1990-2000) and the “Bond Bull” (2000-2010), but saw performance degrade significantly in the “Inflation Shock” era (2020-2024), supporting the “Regime Overfitting” critique discussed in the main text.</p>
+<div id="appfigb-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfigb figure">
+<div aria-describedby="appfigb-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/04_sensitivity/sensitivity_02_subperiods_heatmap.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Sub-period Performance Heatmap. The table displays the annualized Sharpe Ratio of the Naive Risk Parity strategy across distinct economic decades, highlighting the performance degradation in the post-2020 regime.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfigb quarto-uncaptioned" id="appfigb-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure B1
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="b.2-ex-post-realized-risk-contributions" class="level3">
+<h3 class="anchored" data-anchor-id="b.2-ex-post-realized-risk-contributions">B.2 Ex-Post Realized Risk Contributions</h3>
+<p>While the strategy targets equal risk <em>ex-ante</em>, <em>ex-post</em> realizations differ due to correlation shifts. Figure B.2 tracks the actual realized risk contribution of each asset. Notably, during the 2008 and 2022 crises, the realized risk contribution of Equities and Bonds spiked simultaneously (Correlation &gt; 0), breaking the parity assumption and driving the drawdowns observed in the main analysis.</p>
+<div id="appfigb-expost-risk" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfigb figure">
+<div aria-describedby="appfigb-expost-risk-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/05_component_rules/signal_03_strict_rc_expost.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Ex-Post Realized Risk Contributions. The chart shows the actual percentage of portfolio variance explained by each asset over a rolling 36-month window. Note the instability during crisis periods compared to the ex-ante target.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfigb quarto-uncaptioned" id="appfigb-expost-risk-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure B2
+</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="appendix-c-extended-case-studies" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-c-extended-case-studies">Appendix C: Extended Case Studies</h2>
+<section id="c.1-the-whiplash-of-2023-why-erc-missed-the-recovery" class="level3">
+<h3 class="anchored" data-anchor-id="c.1-the-whiplash-of-2023-why-erc-missed-the-recovery">C.1 The “Whiplash” of 2023: Why ERC Missed the Recovery</h3>
+<p>Beyond the 2022 drawdown, the Cost of Complexity is evident in the 2023 recovery. Figure C.1 details the asset weighting differences between ERC and Naive Risk Parity. Because ERC’s covariance matrix was “polluted” by the high volatility of 2022, the optimizer aggressively underweight equities throughout 2023 (red shaded region), causing the strategy to miss the AI-driven market rally that the simpler Naive strategy captured.</p>
+<div id="appfigc-erc-miss" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfigc figure">
+<div aria-describedby="appfigc-erc-miss-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/06_erc_extension/analysis_04_stock_underweight.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>The 2023 Recovery Miss (ERC vs.&nbsp;Naive). Top: Cumulative return gap in 2023. Bottom: The spread in Equity weights (<span class="math inline">\(W_{ERC} - W_{Naive}\)</span>), showing ERC’s persistent underweighting of stocks during the market rebound.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfigc quarto-uncaptioned" id="appfigc-erc-miss-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure C1
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="c.2-trend-signal-mechanics-the-2022-bond-exit" class="level3">
+<h3 class="anchored" data-anchor-id="c.2-trend-signal-mechanics-the-2022-bond-exit">C.2 Trend Signal Mechanics: The 2022 Bond Exit</h3>
+<p>Figure C.2 provides a microscopic view of the Trend Filter in action during the critical 2022 inflation shock. The plot overlays the price of the 10-Year Treasury ETF (IEF) with the Moving Average signal. The mechanism is binary and decisive: as IEF broke the trend in early 2022, the signal switched to “Risk Off,” forcing the entire bond sleeve to cash/T-bills, thereby avoiding the subsequent 20% decline that impaired the static portfolio.</p>
+<div id="appfigc-trend-zoom" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfigc figure">
+<div aria-describedby="appfigc-trend-zoom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/07_trend_following/trend_2022_zoom_combined.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Trend Signal Zoom-In (2022 Bond Exit). The chart illustrates the price action of 10-Year Treasuries (Blue) and the Trend Filter exit point (Red Dot), demonstrating the “stop-loss” mechanics that protected the portfolio.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfigc quarto-uncaptioned" id="appfigc-trend-zoom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure C2
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="c.3-long-term-structural-evolution" class="level3">
+<h3 class="anchored" data-anchor-id="c.3-long-term-structural-evolution">C.3 Long-Term Structural Evolution</h3>
+<p>Figure C.3 visualizes the macroscopic evolution of the Risk Parity portfolio over 35 years. It highlights the “Leverage Cycle”: leverage ratios (total height of the stack) were low during the high-volatility 1990s and 2000s but expanded significantly during the low-volatility 2010s. This leverage expansion left the strategy structurally fragile to the volatility spike of 2022.</p>
+<div id="appfigc-stackplot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-appfigc figure">
+<div aria-describedby="appfigc-stackplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="plots/06_erc_extension/analysis_levered_stackplot.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Historical Asset Allocation &amp; Leverage (1990-2024). The stackplot displays the effective exposure to each asset class over time. The total height represents gross leverage, illustrating the regime-dependent expansion and contraction of risk taking.</figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-appfigc quarto-uncaptioned" id="appfigc-stackplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure C3
+</figcaption>
+</figure>
+</div>
+
+</section>
+</section>
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-Asness2012" class="csl-entry" role="listitem">
+Asness, Clifford S., Andrea Frazzini, and Lasse H. Pedersen. 2012. <span>“Leverage Aversion and Risk Parity.”</span> <em>Financial Analysts Journal</em> 68 (1): 47–59.
+</div>
+<div id="ref-Chaves2011" class="csl-entry" role="listitem">
+Chaves, Denis B., Jason Hsu, Feifei Li, and Omid Shakernia. 2011. <span>“Risk Parity Portfolio Vs. Other Asset Allocation Heuristic Portfolios.”</span> <em>The Journal of Investing</em> 20 (1): 108–18.
+</div>
+<div id="ref-jupyterbook" class="csl-entry" role="listitem">
+Executable Books Community. 2020. <span>“Jupyter Book.”</span> Zenodo. <a href="https://doi.org/10.5281/zenodo.4539666">https://doi.org/10.5281/zenodo.4539666</a>.
+</div>
+<div id="ref-Hurst2017" class="csl-entry" role="listitem">
+Hurst, Brian, Yao Hua Ooi, and Lasse H. Pedersen. 2017. <span>“A Century of Evidence on Trend-Following Investing.”</span> <em>Journal of Portfolio Management</em> 44 (1): 15–29.
+</div>
+<div id="ref-jabref" class="csl-entry" role="listitem">
+<span>“Jabref.”</span> 2021. <a href="https://www.jabref.org">https://www.jabref.org</a>.
+</div>
+<div id="ref-Maillard2010" class="csl-entry" role="listitem">
+Maillard, Sébastien, Thierry Roncalli, and Jérôme Teïletche. 2010. <span>“On the Properties of Equally-Weighted Risk Contributions Portfolios.”</span> <em>Journal of Portfolio Management</em> 36 (4): 60–70.
+</div>
+<div id="ref-Moskowitz2012" class="csl-entry" role="listitem">
+Moskowitz, Tobias J., Yao Hua Ooi, and Lasse H. Pedersen. 2012. <span>“Time Series Momentum.”</span> <em>Journal of Financial Economics</em> 104 (2): 228–50.
+</div>
+<div id="ref-PetersonReplication" class="csl-entry" role="listitem">
+Peterson, Brian G. 2016. <span>“Research Replication.”</span> <a href="https://www.researchgate.net/publication/319298241_Research_Replication">https://www.researchgate.net/publication/319298241_Research_Replication</a>.
+</div>
+<div id="ref-Peterson2015" class="csl-entry" role="listitem">
+———. 2017. <span>“Developing &amp; Backtesting Systematic Trading Strategies.”</span> <a href="https://www.researchgate.net/publication/319298448_Developing_Backtesting_Systematic_Trading_Strategies">https://www.researchgate.net/publication/319298448_Developing_Backtesting_Systematic_Trading_Strategies</a>.
+</div>
+<div id="ref-Qian2005" class="csl-entry" role="listitem">
+Qian, Edward. 2005. <span>“Risk Parity Portfolios: Efficient Portfolios Through True Diversification.”</span> PanAgora Asset Management White Paper. <a href="https://www.panagora.com/assets/risk_party_portfolios.pdf">https://www.panagora.com/assets/risk_party_portfolios.pdf</a>.
+</div>
+<div id="ref-Sullivan2025" class="csl-entry" role="listitem">
+Sullivan, Rodney N., and Matthew Wey. 2025. <span>“Risk Parity and Its Discontents.”</span> SSRN Working Paper No. 5165202. <a href="https://doi.org/10.2139/ssrn.5165202">https://doi.org/10.2139/ssrn.5165202</a>.
+</div>
+<div id="ref-jupytext" class="csl-entry" role="listitem">
+Wouts, Marc. 2022. <span>“Jupyter Notebooks as Markdown Documents, Julia, Python or r Scripts.”</span> <a href="https://jupytext.readthedocs.io/en/latest/">https://jupytext.readthedocs.io/en/latest/</a>.
+</div>
+<div id="ref-Rmarkdown" class="csl-entry" role="listitem">
+Xie, Yihui. 2017. <span>“R Markdown — Dynamic Documents for r.”</span> <a href="http://rmarkdown.rstudio.com/">http://rmarkdown.rstudio.com/</a>.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
